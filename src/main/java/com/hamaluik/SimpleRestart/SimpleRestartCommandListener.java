@@ -1,6 +1,7 @@
 package com.hamaluik.SimpleRestart;
 
-import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map.Entry;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -241,24 +242,23 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 		return true;
 	}
 	
-	void showHelp(CommandSender sender) {
+	private void showHelp(CommandSender sender) {
 		// title..
 		plugin.returnMessage(sender, "&f--- &3Restart &bHelp &f---");
 		
-		ArrayList<HelpItem> helpList = new ArrayList<HelpItem>();
+		LinkedHashMap<String, String> helpList = new LinkedHashMap<String, String>(); // Format: Command = Description.
 		
 		// start with default commands
-		helpList.add(new HelpItem("&3/restart &bhelp", "&7shows this help"));
-		helpList.add(new HelpItem("&3/restart &bnow", "&7restarts the server NOW"));
-		helpList.add(new HelpItem("&3/restart &btime", "&7informs you how much time is left before restarting"));
-		helpList.add(new HelpItem("&3/restart &7(&bh&7|&bm&7|&bs&7) &f<time>", "&7restarts the server after a given amount of time"));
-		helpList.add(new HelpItem("&3/restart &bon", "&7turns auto-restarts on"));
-		helpList.add(new HelpItem("&3/restart &boff", "&7turns auto-restarts off"));
+		helpList.put("&3/restart &bhelp", "&7shows this help");
+		helpList.put("&3/restart &bnow", "&7restarts the server NOW");
+		helpList.put("&3/restart &btime", "&7informs you how much time is left before restarting");
+		helpList.put("&3/restart &7(&bh&7|&bm&7|&bs&7) &f<time>", "&7restarts the server after a given amount of time");
+		helpList.put("&3/restart &bon", "&7turns auto-restarts on");
+		helpList.put("&3/restart &boff", "&7turns auto-restarts off");
 		
 		// send the help..
-		for(int i = 0; i < helpList.size(); i++) {
-			plugin.returnMessage(sender, helpList.get(i).command);
-			plugin.returnMessage(sender, "     " + helpList.get(i).description);
+		for(Entry<String, String> entry : helpList.entrySet()) {
+			plugin.returnMessage(sender, entry.getKey() + "\r\n     " + entry.getValue());
 		}
 	}
 }

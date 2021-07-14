@@ -9,26 +9,27 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Logger;
 
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
+//import org.bukkit.plugin.Plugin; // WoeshEdit - Commented out.
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.configuration.file.FileConfiguration;
 
-import com.nijiko.permissions.PermissionHandler;
-import com.nijikokun.bukkit.Permissions.Permissions;
-
-import ru.tehkode.permissions.bukkit.PermissionsEx;
-import ru.tehkode.permissions.PermissionManager;
-
-import de.bananaco.bpermissions.api.WorldManager;
+//import com.nijiko.permissions.PermissionHandler; // WoeshEdit - Commented out.
+//import com.nijikokun.bukkit.Permissions.Permissions; // WoeshEdit - Commented out.
+//
+//import ru.tehkode.permissions.bukkit.PermissionsEx; // WoeshEdit - Commented out.
+//import ru.tehkode.permissions.PermissionManager; // WoeshEdit - Commented out.
+//
+//import de.bananaco.bpermissions.api.WorldManager; // WoeshEdit - Commented out.
 
 public class SimpleRestart extends JavaPlugin {
 	// the basics
 	Logger log = Logger.getLogger("Minecraft");
-	public PermissionHandler permissions3;
-	public PermissionManager permissionsEx;
-	public WorldManager bpermissions;
+//	public PermissionHandler permissions3; // WoeshEdit - Commented out.
+//	public PermissionManager permissionsEx; // WoeshEdit - Commented out.
+//	public WorldManager bpermissions; // WoeshEdit - Commented out.
 	
 	// keep track of ourself!
 	SimpleRestart plugin = this;
@@ -53,6 +54,7 @@ public class SimpleRestart extends JavaPlugin {
 	long startTimestamp;
 	
 	// startup routine..
+	@Override
 	public void onEnable() {		
 		// set up the plugin..
 		this.setupPermissions();
@@ -71,52 +73,55 @@ public class SimpleRestart extends JavaPlugin {
 	}
 
 	// shutdown routine
+	@Override
 	public void onDisable() {
 		cancelTasks();
 		log.info("[SimpleRestart] plugin disabled");
 	}
 	
 	// load the permissions plugin..
-	private void setupPermissions() {
-		if (this.bpermissions == null) {
-			if (this.getServer().getPluginManager().isPluginEnabled("bPermissions")) {
-				this.bpermissions = WorldManager.getInstance();
-				log.info("[SimpleRestart] permissions (bPermissions-Plugin) successfully loaded");
-				return;
-			}
-		}
-		if (this.permissionsEx == null) {
-			if (this.getServer().getPluginManager().isPluginEnabled("PermissionsEx")) {
-				this.permissionsEx = PermissionsEx.getPermissionManager();
-				log.info("[SimpleRestart] permissions (PermissionsEx-Plugin) successfully loaded");
-				return;
-			}
-		}
-		if (this.permissions3 == null) {
-			Plugin permissions3Plugin = this.getServer().getPluginManager().getPlugin("Permissions");
-			if (permissions3Plugin != null) {
-				this.permissions3 = ((Permissions)permissions3Plugin).getHandler();
-				log.info("[SimpleRestart] permissions (Permissions-Plugin) successfully loaded");
-				return;
-			}
-		} else {
-			log.info("[SimpleRestart] permission system not detected, defaulting to OP");
-			return;
-		}
+	private void setupPermissions() { // WoeshEdit - Replaced method.
+		log.info("[SimpleRestart] [WoeshEdit] Using Bukkits permission system.");
+//		if (this.bpermissions == null) {
+//			if (this.getServer().getPluginManager().isPluginEnabled("bPermissions")) {
+//				this.bpermissions = WorldManager.getInstance();
+//				log.info("[SimpleRestart] permissions (bPermissions-Plugin) successfully loaded");
+//				return;
+//			}
+//		}
+//		if (this.permissionsEx == null) {
+//			if (this.getServer().getPluginManager().isPluginEnabled("PermissionsEx")) {
+//				this.permissionsEx = PermissionsEx.getPermissionManager();
+//				log.info("[SimpleRestart] permissions (PermissionsEx-Plugin) successfully loaded");
+//				return;
+//			}
+//		}
+//		if (this.permissions3 == null) {
+//			Plugin permissions3Plugin = this.getServer().getPluginManager().getPlugin("Permissions");
+//			if (permissions3Plugin != null) {
+//				this.permissions3 = ((Permissions)permissions3Plugin).getHandler();
+//				log.info("[SimpleRestart] permissions (Permissions-Plugin) successfully loaded");
+//				return;
+//			}
+//		} else {
+//			log.info("[SimpleRestart] permission system not detected, defaulting to OP");
+//			return;
+//		}
 	}
 	
 	// just an interface function for checking permissions
 	// if permissions are down, default to OP status.
-	public boolean hasPermission(Player player, String permission) {
-		if(permissions3 != null) {
-			return (permissions3.has(player, permission));
-		} else if (permissionsEx != null) {
-			return (permissionsEx.has(player, permission));
-		} else if (bpermissions != null) {
-			return player.hasPermission(permission);
-		} else {
-			return player.isOp();
-		}
+	public boolean hasPermission(Player player, String permission) { // WoeshEdit - Replaced method.
+		return player.hasPermission(permission);
+//		if(permissions3 != null) {
+//			return (permissions3.has(player, permission));
+//		} else if (permissionsEx != null) {
+//			return (permissionsEx.has(player, permission));
+//		} else if (bpermissions != null) {
+//			return player.hasPermission(permission);
+//		} else {
+//			return player.isOp();
+//		}
 	}
 	
 	private void checkConfiguration() {
@@ -185,22 +190,25 @@ public class SimpleRestart extends JavaPlugin {
 	public void returnMessage(CommandSender sender, String message) {
 		if(sender instanceof Player) {
 			sender.sendMessage(plugin.processColours(message));
-		}
-		else {
+		} else {
 			sender.sendMessage(plugin.stripColours(message));
 		}
 	}
 	
-	void cancelTasks() {
+	protected void cancelTasks() {
 		//plugin.getServer().getScheduler().cancelTasks(plugin);
-		for(int i = 0; i < warningTimers.size(); i++) warningTimers.get(i).cancel();
+		for(int i = 0; i < warningTimers.size(); i++) {
+			warningTimers.get(i).cancel();
+		}
 		warningTimers.clear();
-		if(rebootTimer != null) rebootTimer.cancel();
+		if(rebootTimer != null) {
+			rebootTimer.cancel();
+		}
 		rebootTimer = new Timer();
 		plugin.autoRestart = false;
 	}
 	
-	void scheduleTasks() {
+	protected void scheduleTasks() {
 		cancelTasks();
 		// start the warning tasks
 		for(int i = 0; i < warnTimes.size(); i++) {
@@ -221,8 +229,14 @@ public class SimpleRestart extends JavaPlugin {
 				warnTimer.schedule(new TimerTask() {
 					@Override
 					public void run() {
-						getServer().broadcastMessage(processColours(warningMessage.replaceAll("%t", "" + warnTime)));
-						plugin.log.info("[SimpleRestart] " + stripColours(warningMessage.replaceAll("%t", "" + warnTime)));
+						// WoeshEdit - Run the code on the server main thread (fixes ConcurrentModificationExceptions).
+						Bukkit.getScheduler().runTask(plugin, new Runnable() {
+							@Override
+							public void run() {
+								getServer().broadcastMessage(processColours(warningMessage.replaceAll("%t", "" + warnTime)));
+								plugin.log.info("[SimpleRestart] " + stripColours(warningMessage.replaceAll("%t", "" + warnTime)));
+							}
+						});
 					}
 				}, (long)((restartInterval * 60 - warnTimes.get(i)) * 60000.0));
 				log.info("[SimpleRestart] warning scheduled for " + (long)((restartInterval * 60 - warnTimes.get(i)) * 60.0) + " seconds from now!");
@@ -239,7 +253,13 @@ public class SimpleRestart extends JavaPlugin {
 		rebootTimer.schedule(new TimerTask() {
 			@Override
 			public void run() {
-				stopServer();
+				// WoeshEdit - Run the code on the server main thread (fixes ConcurrentModificationExceptions).
+				Bukkit.getScheduler().runTask(plugin, new Runnable() {
+					@Override
+					public void run() {
+						stopServer();
+					}
+				});
 			}
 		}, (long)(restartInterval * 3600000.0));
 		
@@ -250,9 +270,9 @@ public class SimpleRestart extends JavaPlugin {
 	
 	// kick all players from the server
 	// with a friendly message!
-	void clearServer() {
+	private void clearServer() {
 		this.getServer().broadcastMessage(processColours(restartMessage));
-		Player[] players = this.getServer().getOnlinePlayers();
+		Player[] players = this.getServer().getOnlinePlayers().toArray(new Player[0]); // WoeshEdit - Added ".toArray(new Player[0])".
 		for (Player player : players) {
 			player.kickPlayer(stripColours(restartMessage));
 		}
@@ -264,7 +284,7 @@ public class SimpleRestart extends JavaPlugin {
 	// full kudos to the Redecouverte at:
 	// http://forums.bukkit.org/threads/send-commands-to-console.3241/
 	// for the code on executing commands as the console
-	boolean stopServer() {
+	protected boolean stopServer() {
 		// log it and empty out the server first
 		log.info("[SimpleRestart] Restarting...");
 		clearServer();
@@ -281,8 +301,13 @@ public class SimpleRestart extends JavaPlugin {
 			return false;
 		}
 		try {
-            this.getServer().dispatchCommand(this.getServer().getConsoleSender(), "save-all");
-            this.getServer().dispatchCommand(this.getServer().getConsoleSender(), "stop");
+//            this.getServer().dispatchCommand(this.getServer().getConsoleSender(), "save-all");
+//            this.getServer().dispatchCommand(this.getServer().getConsoleSender(), "stop");
+			this.getServer().savePlayers();
+			for(org.bukkit.World world : this.getServer().getWorlds()) {
+				world.save();
+			}
+            this.getServer().shutdown();
 		} catch (Exception e) {
 			log.info("[SimpleRestart] Something went wrong while saving & stoping!");
 			return false;
