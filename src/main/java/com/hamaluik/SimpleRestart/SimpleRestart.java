@@ -37,11 +37,11 @@ public class SimpleRestart extends JavaPlugin {
 	@Override
 	public void onEnable() {
 		// set up the plugin..
-		this.loadConfiguration();
+		loadConfiguration();
 		SimpleRestartCommandListener commandListener = new SimpleRestartCommandListener(this);
-		this.getCommand("restart").setExecutor(commandListener);
-		this.getCommand("reboot").setExecutor(commandListener);
-		this.getCommand("memory").setExecutor(commandListener);
+		getCommand("restart").setExecutor(commandListener);
+		getCommand("reboot").setExecutor(commandListener);
+		getCommand("memory").setExecutor(commandListener);
 		getLogger().info("Plugin enabled");
 		
 		// ok, now if we want to schedule a restart, do so!
