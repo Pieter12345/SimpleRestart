@@ -1,12 +1,14 @@
 name: SimpleRestart
 main: com.hamaluik.SimpleRestart.SimpleRestart
-version: 1.3.4
+version: 2.0.0
+api-version: 1.14
+
 authors:
   - "FuzzyWuzzie"
   - "THExSYSTEM"
-website: "http://dev.bukkit.org/server-mods/simple_restart/"
-database: false
-load: postworld
+  - "Pieter12345/woesh0007"
+  - "Ecconia"
+website: "https://github.com/Pieter12345/SimpleRestart"
 
 commands:
    restart:

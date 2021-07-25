@@ -1,5 +1,12 @@
-.*
-*.sublime*
-bin
-target
-lib
+# Maven:
+/target/
+
+# Eclipse:
+/bin/
+/.settings/
+/.classpath
+/.project
+
+# IntelliJ:
+/.idea/
+/*.iml
