@@ -1,50 +1,46 @@
 package com.hamaluik.SimpleRestart;
 
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Logger;
 
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.configuration.file.FileConfiguration;
 
 public class SimpleRestart extends JavaPlugin {
 	// the basics
-	Logger log = Logger.getLogger("Minecraft");
+	protected final Logger log = Logger.getLogger("Minecraft");
 	
 	// keep track of ourself!
-	SimpleRestart plugin = this;
+	private final SimpleRestart plugin = this;
 	// and the command executor!
-	SimpleRestartCommandListener commandListener = new SimpleRestartCommandListener(this);
+	private final SimpleRestartCommandListener commandListener = new SimpleRestartCommandListener(this);
 	
 	// options
-	boolean autoRestart = true;
-	double restartInterval = 1;
-	List<Double> warnTimes;
-	boolean delayUntilEmpty = false;
-	int maxPlayersConsideredEmpty = 0;
+	protected boolean autoRestart = true;
+	protected double restartInterval = 1;
+	private List<Double> warnTimes;
 	// Ampersand will be replaced, as soon as the config is loaded! (Only here as default value for the config).
-	String warningMessage = "&cServer will be restarting in %t minutes!";
-	String restartMessage = "&cServer is restarting, we'll be right back!";
+	private String warningMessage = "&cServer will be restarting in %t minutes!";
+	private String restartMessage = "&cServer is restarting, we'll be right back!";
 	
 	// timers
-	public ArrayList<Timer> warningTimers = new ArrayList<Timer>();
+	public ArrayList<Timer> warningTimers = new ArrayList<>();
 	public Timer rebootTimer;
 	
 	// keep track of when we started the scheduler
 	// so that we know how much time is left
-	long startTimestamp;
+	protected long startTimestamp;
 	
 	// startup routine..
 	@Override
-	public void onEnable() {		
+	public void onEnable() {
 		// set up the plugin..
 		this.loadConfiguration();
 		this.getCommand("restart").setExecutor(commandListener);
@@ -60,7 +56,7 @@ public class SimpleRestart extends JavaPlugin {
 			log.info("[SimpleRestart] No automatic restarts scheduled!");
 		}
 	}
-
+	
 	// shutdown routine
 	@Override
 	public void onDisable() {
@@ -70,15 +66,15 @@ public class SimpleRestart extends JavaPlugin {
 	
 	public void loadConfiguration() {
 		// Create default config, if it does not exist yet:
-		this.saveDefaultConfig();
+		saveDefaultConfig();
 		
 		// Get configuration values:
 		FileConfiguration config = getConfig();
-		this.autoRestart = config.getBoolean("auto-restart", true);
-		this.restartInterval = config.getDouble("auto-restart-interval", 8);
-		this.warnTimes = config.getDoubleList("warn-times");
-		this.warningMessage = colorize(config.getString("warning-message", warningMessage));
-		this.restartMessage = colorize(config.getString("restart-message", restartMessage));
+		autoRestart = config.getBoolean("auto-restart", true);
+		restartInterval = config.getDouble("auto-restart-interval", 8);
+		warnTimes = config.getDoubleList("warn-times");
+		warningMessage = colorize(config.getString("warning-message", warningMessage));
+		restartMessage = colorize(config.getString("restart-message", restartMessage));
 	}
 	
 	// allow for colour tags to be used in strings..
@@ -96,7 +92,7 @@ public class SimpleRestart extends JavaPlugin {
 			rebootTimer.cancel();
 		}
 		rebootTimer = new Timer();
-		plugin.autoRestart = false;
+		autoRestart = false;
 	}
 	
 	protected void scheduleTasks() {
@@ -121,19 +117,16 @@ public class SimpleRestart extends JavaPlugin {
 					@Override
 					public void run() {
 						// WoeshEdit - Run the code on the server main thread (fixes ConcurrentModificationExceptions).
-						Bukkit.getScheduler().runTask(plugin, new Runnable() {
-							@Override
-							public void run() {
-								getServer().broadcastMessage(warningMessage.replaceAll("%t", String.valueOf(warnTime)));
-								plugin.log.info("[SimpleRestart] " + ChatColor.stripColor(warningMessage.replaceAll("%t", String.valueOf(warnTime))));
-							}
+						getServer().getScheduler().runTask(plugin, () -> {
+							getServer().broadcastMessage(warningMessage.replaceAll("%t", String.valueOf(warnTime)));
+							plugin.log.info("[SimpleRestart] " + ChatColor.stripColor(warningMessage.replaceAll("%t", String.valueOf(warnTime))));
 						});
 					}
 				}, (long)((restartInterval * 60 - warnTimes.get(i)) * 60000.0));
 				log.info("[SimpleRestart] warning scheduled for " + (long)((restartInterval * 60 - warnTimes.get(i)) * 60.0) + " seconds from now!");
 			}
 		}
-
+		
 		// start the restart task
 		/*getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
 			public void run() {
@@ -145,26 +138,22 @@ public class SimpleRestart extends JavaPlugin {
 			@Override
 			public void run() {
 				// WoeshEdit - Run the code on the server main thread (fixes ConcurrentModificationExceptions).
-				Bukkit.getScheduler().runTask(plugin, new Runnable() {
-					@Override
-					public void run() {
-						stopServer();
-					}
+				getServer().getScheduler().runTask(plugin, () -> {
+					stopServer();
 				});
 			}
 		}, (long)(restartInterval * 3600000.0));
 		
 		log.info("[SimpleRestart] reboot scheduled for " + (long)(restartInterval  * 3600.0) + " seconds from now!");
-		plugin.autoRestart = true;
-		plugin.startTimestamp = System.currentTimeMillis();
+		autoRestart = true;
+		startTimestamp = System.currentTimeMillis();
 	}
 	
 	// kick all players from the server
 	// with a friendly message!
 	private void clearServer() {
-		this.getServer().broadcastMessage(restartMessage);
-		Player[] players = this.getServer().getOnlinePlayers().toArray(new Player[0]); // WoeshEdit - Added ".toArray(new Player[0])".
-		for (Player player : players) {
+		getServer().broadcastMessage(restartMessage);
+		for (Player player : getServer().getOnlinePlayers()) {
 			player.kickPlayer(ChatColor.stripColor(restartMessage));
 		}
 	}
@@ -180,7 +169,7 @@ public class SimpleRestart extends JavaPlugin {
 		log.info("[SimpleRestart] Restarting...");
 		clearServer();
 		try {
-			File file = new File(this.getDataFolder().getAbsolutePath() + File.separator + "restart.txt");
+			File file = new File(getDataFolder().getAbsolutePath() + File.separator + "restart.txt");
 			log.info("[SimpleRestart] Touching restart.txt at: " + file.getAbsolutePath());
 			if (file.exists()) {
 				file.setLastModified(System.currentTimeMillis());
@@ -192,15 +181,13 @@ public class SimpleRestart extends JavaPlugin {
 			return false;
 		}
 		try {
-//            this.getServer().dispatchCommand(this.getServer().getConsoleSender(), "save-all");
-//            this.getServer().dispatchCommand(this.getServer().getConsoleSender(), "stop");
-			this.getServer().savePlayers();
-			for(org.bukkit.World world : this.getServer().getWorlds()) {
+			getServer().savePlayers();
+			for(World world : getServer().getWorlds()) {
 				world.save();
 			}
-            this.getServer().shutdown();
+			getServer().shutdown();
 		} catch (Exception e) {
-			log.info("[SimpleRestart] Something went wrong while saving & stoping!");
+			log.info("[SimpleRestart] Something went wrong while saving & stopping!");
 			return false;
 		}
 		return true;

@@ -17,7 +17,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 	public SimpleRestartCommandListener(SimpleRestart instance) {
 		plugin = instance;
 	}
-
+	
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 		//Since this is only one command handler, the label needs to be normalized.
@@ -107,7 +107,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 					sendFeedback(sender, ChatColor.RED + "The server was already automatically restarting!");
 					return true;
 				}
-
+				
 				// turn auto-restarts back on..
 				plugin.autoRestart = true;
 				plugin.log.info("[SimpleRestart] reloading configuration..");
@@ -170,7 +170,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 				}
 				
 				String timeFormat = args[0];
-				double timeAmount = 0;
+				double timeAmount;
 				try {
 					 timeAmount = Double.parseDouble(args[1]);
 				}
@@ -180,7 +180,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 				}
 				
 				// "parse" the restart time
-				double restartTime = 0; // in seconds
+				double restartTime; // in seconds
 				if(timeFormat.equalsIgnoreCase("h")) {
 					restartTime = timeAmount * 3600;
 				}
@@ -239,7 +239,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 			float freeMemory = (float)java.lang.Runtime.getRuntime().freeMemory() / (1024F * 1024F);
 			float totalMemory = (float)java.lang.Runtime.getRuntime().totalMemory() / (1024F * 1024F);
 			float maxMemory = (float)java.lang.Runtime.getRuntime().maxMemory() / (1024F * 1024F);
-
+			
 			sendFeedback(sender, ChatColor.RED + "Free memory: " + ChatColor.WHITE + String.format("%.1f", freeMemory) + "MB");
 			sendFeedback(sender, ChatColor.RED + "Total memory: " + ChatColor.WHITE + String.format("%.1f", totalMemory) + "MB");
 			sendFeedback(sender, ChatColor.RED + "Max memory: " + ChatColor.WHITE + String.format("%.1f", maxMemory) + "MB");
