@@ -3,12 +3,15 @@ package com.hamaluik.SimpleRestart;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 public class SimpleRestartCommandListener implements CommandExecutor {
+	private static final String noPermissionMessage = ChatColor.RED + "You don't have permission to do that!";
+	
 	private final SimpleRestart plugin;
 	
 	public SimpleRestartCommandListener(SimpleRestart instance) {
@@ -34,13 +37,13 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 					// only if they're a player
 					if(!sender.hasPermission("simplerestart.restart")) {
 						// no permission!
-						plugin.returnMessage(sender, "&cYou don't have permission to do that!");
+						sender.sendMessage(noPermissionMessage);
 						return true;
 					}
 				}
 				
 				// restarting NOW
-				plugin.returnMessage(sender, "&cOk, you asked for it!");
+				sendFeedback(sender, ChatColor.RED + "Ok, you asked for it!");
 				plugin.stopServer();
 				return true;
 			}
@@ -51,15 +54,14 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 					// only if they're a player
 					if(!sender.hasPermission("simplerestart.time")) {
 						// no permission!
-						plugin.returnMessage(sender, "&cYou don't have permission to do that!");
+						sendFeedback(sender, noPermissionMessage);
 						return true;
 					}
 				}
 				
-				
 				if(!plugin.autoRestart) {
 					// make sure there IS an auto-restart
-					plugin.returnMessage(sender, "&cThere is no auto-restart scheduled!");
+					sendFeedback(sender, ChatColor.RED + "There is no auto-restart scheduled!");
 					return true;
 				}
 				
@@ -70,7 +72,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 				int minutes = (int)((timeLeft - hours * 3600) / 60);
 				int seconds = (int)timeLeft % 60;
 				
-				plugin.returnMessage(sender, "&bThe server will be restarting in &f" + hours + "h" + minutes + "m" + seconds + "s");
+				sendFeedback(sender, ChatColor.AQUA + "The server will be restarting in " + ChatColor.WHITE + hours + "h" + minutes + "m" + seconds + "s");
 				
 				return true;
 			}
@@ -80,7 +82,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 					// only if they're a player
 					if(!sender.hasPermission("simplerestart.restart")) {
 						// no permission!
-						plugin.returnMessage(sender, "&cYou don't have permission to do that!");
+						sendFeedback(sender, noPermissionMessage);
 						return true;
 					}
 				}
@@ -95,14 +97,14 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 					// only if they're a player
 					if(!sender.hasPermission("simplerestart.restart")) {
 						// no permission!
-						plugin.returnMessage(sender, "&cYou don't have permission to do that!");
+						sendFeedback(sender, noPermissionMessage);
 						return true;
 					}
 				}
 				
 				// only if we're not already auto-restarting
 				if(plugin.autoRestart) {
-					plugin.returnMessage(sender, "&cThe server was already automatically restarting!");
+					sendFeedback(sender, ChatColor.RED + "The server was already automatically restarting!");
 					return true;
 				}
 
@@ -114,7 +116,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 				plugin.scheduleTasks();
 				
 				// and inform!
-				plugin.returnMessage(sender, "&bAutomatic restarts have been turned on!");
+				sendFeedback(sender, ChatColor.AQUA + "Automatic restarts have been turned on!");
 				plugin.log.info("[SimpleRestart] " + sender.toString() + " turned automatic restarts on!");
 				
 				// ok, now see how long is left!
@@ -124,7 +126,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 				int minutes = (int)((timeLeft - hours * 3600) / 60);
 				int seconds = (int)timeLeft % 60;
 				
-				plugin.returnMessage(sender, "&bThe server will be restarting in &f" + hours + "h" + minutes + "m" + seconds + "s");
+				sendFeedback(sender, ChatColor.AQUA + "The server will be restarting in " + ChatColor.WHITE + hours + "h" + minutes + "m" + seconds + "s");
 				
 				return true;
 			}
@@ -134,14 +136,14 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 					// only if they're a player
 					if(!sender.hasPermission("simplerestart.restart")) {
 						// no permission!
-						plugin.returnMessage(sender, "&cYou don't have permission to do that!");
+						sendFeedback(sender, noPermissionMessage);
 						return true;
 					}
 				}
 				
 				// only if we're not already auto-restarting
 				if(!plugin.autoRestart) {
-					plugin.returnMessage(sender, "&cThe server already wasn't automatically restarting!");
+					sendFeedback(sender, ChatColor.RED + "The server already wasn't automatically restarting!");
 					return true;
 				}
 				
@@ -149,7 +151,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 				plugin.cancelTasks();
 				
 				// and inform!
-				plugin.returnMessage(sender, "&bAutomatic restarts have been turned off!");
+				sendFeedback(sender, ChatColor.AQUA + "Automatic restarts have been turned off!");
 				plugin.log.info("[SimpleRestart] " + sender.toString() + " turned automatic restarts off!");
 				
 				return true;
@@ -162,11 +164,10 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 					// only if they're a player
 					if(!sender.hasPermission("simplerestart.restart")) {
 						// no permission!
-						plugin.returnMessage(sender, "&cYou don't have permission to do that!");
+						sendFeedback(sender, noPermissionMessage);
 						return true;
 					}
 				}
-				
 				
 				String timeFormat = args[0];
 				double timeAmount = 0;
@@ -174,7 +175,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 					 timeAmount = Double.parseDouble(args[1]);
 				}
 				catch(Exception e) {
-					plugin.returnMessage(sender, "&cBad time!");
+					sendFeedback(sender, ChatColor.RED + "Bad time!");
 					return true;
 				}
 				
@@ -190,8 +191,8 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 					restartTime = timeAmount;
 				}
 				else {
-					plugin.returnMessage(sender, "&cInvalid time scale!");
-					plugin.returnMessage(sender, "&bUse 'h' for time in hours, etc");
+					sendFeedback(sender, ChatColor.RED + "Invalid time scale!");
+					sendFeedback(sender, ChatColor.AQUA + "Use 'h' for time in hours, etc");
 					return true;
 				}
 				
@@ -218,7 +219,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 				int minutes = (int)((timeLeft - hours * 3600) / 60);
 				int seconds = (int)timeLeft % 60;
 				
-				plugin.returnMessage(sender, "&bThe server will now be restarting in &f" + hours + "h" + minutes + "m" + seconds + "s");
+				sendFeedback(sender, ChatColor.AQUA + "The server will now be restarting in " + ChatColor.WHITE + hours + "h" + minutes + "m" + seconds + "s");
 				
 				return true;
 			}
@@ -229,7 +230,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 				// only if they're a player
 				if(!sender.hasPermission("simplerestart.memory")) {
 					// no permission!
-					plugin.returnMessage(sender, "&cYou don't have permission to do that!");
+					sendFeedback(sender, noPermissionMessage);
 					return true;
 				}
 			}
@@ -239,36 +240,48 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 			float totalMemory = (float)java.lang.Runtime.getRuntime().totalMemory() / (1024F * 1024F);
 			float maxMemory = (float)java.lang.Runtime.getRuntime().maxMemory() / (1024F * 1024F);
 
-			plugin.returnMessage(sender, "&cFree memory: &f" + String.format("%.1f", freeMemory) + "MB");
-			plugin.returnMessage(sender, "&cTotal memory: &f" + String.format("%.1f", totalMemory) + "MB");
-			plugin.returnMessage(sender, "&cMax memory: &f" + String.format("%.1f", maxMemory) + "MB");
+			sendFeedback(sender, ChatColor.RED + "Free memory: " + ChatColor.WHITE + String.format("%.1f", freeMemory) + "MB");
+			sendFeedback(sender, ChatColor.RED + "Total memory: " + ChatColor.WHITE + String.format("%.1f", totalMemory) + "MB");
+			sendFeedback(sender, ChatColor.RED + "Max memory: " + ChatColor.WHITE + String.format("%.1f", maxMemory) + "MB");
 			
 			return true;
 		}
 
 		// by default tell them they boofed it and show them the help
-		plugin.returnMessage(sender, "&cInvalid command usage!");
+		sendFeedback(sender, ChatColor.RED + "Invalid command usage!");
 		showHelp(sender);
 		return true;
 	}
 	
+	private static void sendFeedback(CommandSender sender, String message) {
+		if(sender instanceof Player) {
+			sender.sendMessage(message);
+		} else {
+			sender.sendMessage(ChatColor.stripColor(message));
+		}
+	}
+	
 	private void showHelp(CommandSender sender) {
-		// title..
-		plugin.returnMessage(sender, "&f--- &3Restart &bHelp &f---");
-		
-		LinkedHashMap<String, String> helpList = new LinkedHashMap<String, String>(); // Format: Command = Description.
-		
-		// start with default commands
-		helpList.put("&3/restart &bhelp", "&7shows this help");
-		helpList.put("&3/restart &bnow", "&7restarts the server NOW");
-		helpList.put("&3/restart &btime", "&7informs you how much time is left before restarting");
-		helpList.put("&3/restart &7(&bh&7|&bm&7|&bs&7) &f<time>", "&7restarts the server after a given amount of time");
-		helpList.put("&3/restart &bon", "&7turns auto-restarts on");
-		helpList.put("&3/restart &boff", "&7turns auto-restarts off");
-		
-		// send the help..
+		StringBuilder builder = new StringBuilder();
+		// Title:
+		builder.append(ChatColor.WHITE + "--- " + ChatColor.DARK_AQUA + "Restart " + ChatColor.AQUA + "Help " + ChatColor.WHITE + "---");
+		// Subcommands:
+		LinkedHashMap<String, String> helpList = new LinkedHashMap<>(); // Format: Command => Description.
+		helpList.put(ChatColor.DARK_AQUA + "/restart " + ChatColor.AQUA + "help", ChatColor.GRAY + "shows this help");
+		helpList.put(ChatColor.DARK_AQUA + "/restart " + ChatColor.AQUA + "now", ChatColor.GRAY + "restarts the server NOW");
+		helpList.put(ChatColor.DARK_AQUA + "/restart " + ChatColor.AQUA + "time", ChatColor.GRAY + "informs you how much time is left before restarting");
+		helpList.put(ChatColor.DARK_AQUA + "/restart " + ChatColor.GRAY + "(" + ChatColor.AQUA + "h" + ChatColor.GRAY + "|" + ChatColor.AQUA + "m" + ChatColor.GRAY + "|" + ChatColor.AQUA + "s" + ChatColor.GRAY + ") " + ChatColor.WHITE + "<time>", ChatColor.GRAY + "restarts the server after a given amount of time");
+		helpList.put(ChatColor.DARK_AQUA + "/restart " + ChatColor.AQUA + "on", ChatColor.GRAY + "turns auto-restarts on");
+		helpList.put(ChatColor.DARK_AQUA + "/restart " + ChatColor.AQUA + "off", ChatColor.GRAY + "turns auto-restarts off");
 		for(Entry<String, String> entry : helpList.entrySet()) {
-			plugin.returnMessage(sender, entry.getKey() + "\r\n     " + entry.getValue());
+			builder.append('\n').append(entry.getKey()).append("\n     ").append(entry.getValue());
+		}
+		
+		// Send the help message:
+		if(sender instanceof Player) {
+			sender.sendMessage(builder.toString());
+		} else {
+			sender.sendMessage(ChatColor.stripColor(builder.toString()));
 		}
 	}
 }

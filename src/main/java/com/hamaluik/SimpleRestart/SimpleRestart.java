@@ -10,7 +10,7 @@ import java.util.TimerTask;
 import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;
-import org.bukkit.command.CommandSender;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -30,8 +30,9 @@ public class SimpleRestart extends JavaPlugin {
 	List<Double> warnTimes;
 	boolean delayUntilEmpty = false;
 	int maxPlayersConsideredEmpty = 0;
-	String warningMessage = new String("&cServer will be restarting in %t minutes!");
-	String restartMessage = new String("&cServer is restarting, we'll be right back!");
+	// Ampersand will be replaced, as soon as the config is loaded! (Only here as default value for the config).
+	String warningMessage = "&cServer will be restarting in %t minutes!";
+	String restartMessage = "&cServer is restarting, we'll be right back!";
 	
 	// timers
 	public ArrayList<Timer> warningTimers = new ArrayList<Timer>();
@@ -93,11 +94,11 @@ public class SimpleRestart extends JavaPlugin {
 				out.write("# what to tell players when warning about server reboot\r\n");
 				out.write("# CAN use minecraft classic server protocol colour codes\r\n");
 				out.write("# use %t to indicate time left to reboot\r\n");
-				out.write("warning-message: \"&cServer will be restarting in %t minutes!\"\r\n");
+				out.write("warning-message: \"" + warningMessage + "\"\r\n");
 				out.write("\r\n");
 				out.write("# what to tell players when server reboots\r\n");
 				out.write("# CAN use minecraft classic server protocol colour codes\r\n");
-				out.write("restart-message: \"&cServer is restarting, we'll be right back!\"\r\n");
+				out.write("restart-message: \"" + restartMessage + "\"\r\n");
 				out.close();
 			} catch(IOException ex) {
 				// something went wrong :/
@@ -116,26 +117,13 @@ public class SimpleRestart extends JavaPlugin {
 		this.autoRestart = config.getBoolean("auto-restart", true);
 		this.restartInterval = config.getDouble("auto-restart-interval", 8);
 		this.warnTimes = config.getDoubleList("warn-times");
-		this.warningMessage = config.getString("warning-message", "&cServer will be restarting in %t minutes!");
-		this.restartMessage = config.getString("restart-message", "&cServer is restarting, we'll be right back!");
+		this.warningMessage = colorize(config.getString("warning-message", warningMessage));
+		this.restartMessage = colorize(config.getString("restart-message", restartMessage));
 	}
 	
 	// allow for colour tags to be used in strings..
-	public String processColours(String str) {
-		return str.replaceAll("(&([a-f0-9]))", "\u00A7$2");
-	}
-	
-	// strip colour tags from strings..
-	public String stripColours(String str) {
-		return str.replaceAll("(&([a-f0-9]))", "");
-	}
-	
-	public void returnMessage(CommandSender sender, String message) {
-		if(sender instanceof Player) {
-			sender.sendMessage(plugin.processColours(message));
-		} else {
-			sender.sendMessage(plugin.stripColours(message));
-		}
+	private static String colorize(String str) {
+		return str.replaceAll("(&([a-f0-9]))", ChatColor.COLOR_CHAR + "$2");
 	}
 	
 	protected void cancelTasks() {
@@ -176,8 +164,8 @@ public class SimpleRestart extends JavaPlugin {
 						Bukkit.getScheduler().runTask(plugin, new Runnable() {
 							@Override
 							public void run() {
-								getServer().broadcastMessage(processColours(warningMessage.replaceAll("%t", "" + warnTime)));
-								plugin.log.info("[SimpleRestart] " + stripColours(warningMessage.replaceAll("%t", "" + warnTime)));
+								getServer().broadcastMessage(warningMessage.replaceAll("%t", String.valueOf(warnTime)));
+								plugin.log.info("[SimpleRestart] " + ChatColor.stripColor(warningMessage.replaceAll("%t", String.valueOf(warnTime))));
 							}
 						});
 					}
@@ -214,10 +202,10 @@ public class SimpleRestart extends JavaPlugin {
 	// kick all players from the server
 	// with a friendly message!
 	private void clearServer() {
-		this.getServer().broadcastMessage(processColours(restartMessage));
+		this.getServer().broadcastMessage(restartMessage);
 		Player[] players = this.getServer().getOnlinePlayers().toArray(new Player[0]); // WoeshEdit - Added ".toArray(new Player[0])".
 		for (Player player : players) {
-			player.kickPlayer(stripColours(restartMessage));
+			player.kickPlayer(ChatColor.stripColor(restartMessage));
 		}
 	}
 	
