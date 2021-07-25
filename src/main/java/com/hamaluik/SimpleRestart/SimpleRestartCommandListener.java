@@ -2,7 +2,6 @@ package com.hamaluik.SimpleRestart;
 
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
-
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -33,7 +32,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 		if(label.equals("memory")) {
 			handleMemoryCommand(sender);
 		}
-		else { //Assume this is the restart or reboot command.
+		else { //Assume this is the /restart or /reboot command.
 			handleRebootCommand(sender, args);
 		}
 		
@@ -42,175 +41,173 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 	
 	private void handleRebootCommand(CommandSender sender, String[] args)
 	{
-		if(args.length == 1 && args[0].equalsIgnoreCase("now")) {
-			if(checkIfHasNoPermission(sender, "restart")) {
-				return;
-			}
-			
-			// restarting NOW
-			sendFeedback(sender, ChatColor.RED + "Ok, you asked for it!");
-			plugin.stopServer();
-			return;
-		}
-		else if(args.length == 1 && args[0].equalsIgnoreCase("time")) {
-			// report the amount of time before the next restart
-			if(checkIfHasNoPermission(sender, "time")) {
-				return;
-			}
-			
-			if(!plugin.autoRestart) {
-				// make sure there IS an auto-restart
-				sendFeedback(sender, ChatColor.RED + "There is no auto-restart scheduled!");
-				return;
-			}
-			
-			// ok, now see how long is left!
-			// (in seconds)
-			double timeLeft = (plugin.restartInterval * 3600) - ((double)(System.currentTimeMillis() - plugin.startTimestamp) / 1000);
-			int hours = (int)(timeLeft / 3600);
-			int minutes = (int)((timeLeft - hours * 3600) / 60);
-			int seconds = (int)timeLeft % 60;
-			
-			sendFeedback(sender, ChatColor.AQUA + "The server will be restarting in " + ChatColor.WHITE + hours + "h" + minutes + "m" + seconds + "s");
-			
-			return;
-		}
-		else if(args.length == 1 && args[0].equalsIgnoreCase("help")) {
-			if(checkIfHasNoPermission(sender, "restart")) {
-				return;
-			}
-			
-			// show help!
-			showHelp(sender);
-			return;
-		}
-		else if(args.length == 1 && args[0].equalsIgnoreCase("on")) {
-			if(checkIfHasNoPermission(sender, "restart")) {
-				return;
-			}
-			
-			// only if we're not already auto-restarting
-			if(plugin.autoRestart) {
-				sendFeedback(sender, ChatColor.RED + "The server was already automatically restarting!");
-				return;
-			}
-			
-			// turn auto-restarts back on..
-			plugin.autoRestart = true;
-			plugin.getLogger().info("Reloading configuration..");
-			plugin.loadConfiguration();
-			plugin.getLogger().info("Scheduling restart tasks...");
-			plugin.scheduleTasks();
-			
-			// and inform!
-			sendFeedback(sender, ChatColor.AQUA + "Automatic restarts have been turned on!");
-			plugin.getLogger().info(sender.getName() + " turned automatic restarts on!");
-			
-			// ok, now see how long is left!
-			// (in seconds)
-			double timeLeft = (plugin.restartInterval * 3600) - ((double)(System.currentTimeMillis() - plugin.startTimestamp) / 1000);
-			int hours = (int)(timeLeft / 3600);
-			int minutes = (int)((timeLeft - hours * 3600) / 60);
-			int seconds = (int)timeLeft % 60;
-			
-			sendFeedback(sender, ChatColor.AQUA + "The server will be restarting in " + ChatColor.WHITE + hours + "h" + minutes + "m" + seconds + "s");
-			
-			return;
-		}
-		else if(args.length == 1 && args[0].equalsIgnoreCase("off")) {
-			if(checkIfHasNoPermission(sender, "restart")) {
-				return;
-			}
-			
-			// only if we're not already auto-restarting
-			if(!plugin.autoRestart) {
-				sendFeedback(sender, ChatColor.RED + "The server already wasn't automatically restarting!");
-				return;
-			}
-			
-			// ok, cancel all the tasks associated with this plugin!
-			plugin.cancelTasks();
-			
-			// and inform!
-			sendFeedback(sender, ChatColor.AQUA + "Automatic restarts have been turned off!");
-			plugin.getLogger().info(sender.getName() + " turned automatic restarts off!");
-			
-			return;
-		}
-		else if(args.length == 2) {
-			// restarting in a set time
-			// note: doing it this way DOES NOT give a restart warning
-			if(checkIfHasNoPermission(sender, "restart")) {
-				return;
-			}
-			
-			String timeFormat = args[0];
-			double timeAmount;
-			try {
-				 timeAmount = Double.parseDouble(args[1]);
-			}
-			catch(Exception e) {
-				sendFeedback(sender, ChatColor.RED + "Bad time!");
-				return;
-			}
-			
-			// "parse" the restart time
-			double restartTime; // in seconds
-			if(timeFormat.equalsIgnoreCase("h")) {
-				restartTime = timeAmount * 3600;
-			}
-			else if(timeFormat.equalsIgnoreCase("m")) {
-				restartTime = timeAmount * 60;
-			}
-			else if(timeFormat.equalsIgnoreCase("s")) {
-				restartTime = timeAmount;
+		if(!sender.hasPermission("simplerestart.restart")) {
+			//No permission for the restart command.
+			if(sender.hasPermission("simplerestart.time")) {
+				//But has the time permission!
+				if(args.length == 1 && args[0].toLowerCase().equals("time")) {
+					subCommandTimeUntilRestart(sender);
+				}
+				else {
+					String message = ChatColor.WHITE + "--- " + ChatColor.DARK_AQUA + "Restart " + ChatColor.AQUA + "Help " + ChatColor.WHITE + "---" + "\n"
+							+ ChatColor.DARK_AQUA + "/restart " + ChatColor.AQUA + "time" + "\n     " + ChatColor.GRAY + "informs you how much time is left before restarting";
+					//Send the (only time) help message:
+					if(sender instanceof Player) {
+						sender.sendMessage(message);
+					}
+					else {
+						sender.sendMessage(ChatColor.stripColor(message));
+					}
+				}
 			}
 			else {
-				sendFeedback(sender, ChatColor.RED + "Invalid time scale!");
-				sendFeedback(sender, ChatColor.AQUA + "Use 'h' for time in hours, etc");
-				return;
+				//No time permission, or no time sub-command, thus deny:
+				sender.sendMessage(noPermissionMessage);
 			}
-			
-			// log to console
-			plugin.getLogger().info(sender.getName() + " is setting a new restart time...");
-			
-			// ok, we have the proper time
-			// if the scheduler is already going, cancel it!
-			if(plugin.autoRestart) {
-				// ok, cancel all the tasks associated with this plugin!
-				plugin.cancelTasks();
-			}
-			
-			// and set the restart interval for /restart time
-			plugin.restartInterval = restartTime / 3600.0;
-			
-			// now, start it up again!
-			plugin.getLogger().info("Scheduling restart tasks...");
-			plugin.scheduleTasks();
-			
-			// and inform!
-			double timeLeft = (plugin.restartInterval * 3600) - ((double)(System.currentTimeMillis() - plugin.startTimestamp) / 1000);
-			int hours = (int)(timeLeft / 3600);
-			int minutes = (int)((timeLeft - hours * 3600) / 60);
-			int seconds = (int)timeLeft % 60;
-			
-			sendFeedback(sender, ChatColor.AQUA + "The server will now be restarting in " + ChatColor.WHITE + hours + "h" + minutes + "m" + seconds + "s");
-			
 			return;
 		}
+		//At this point in time, the sender has permission to use the restart command.
 		
-		// Assume the restart command failed and print the help for that one:
-		sendFeedback(sender, ChatColor.RED + "Invalid command usage!");
-		showHelp(sender);
+		if(args.length == 1) {
+			String subcommand = args[0].toLowerCase();
+			if(subcommand.equals("now")) {
+				//Perform restart now:
+				sendFeedback(sender, ChatColor.RED + "As per request, performing restart now!");
+				plugin.stopServer();
+			}
+			else if(subcommand.equals("time")) {
+				subCommandTimeUntilRestart(sender);
+			}
+			else if(subcommand.equals("help")) {
+				printHelp(sender);
+			}
+			else if(subcommand.equals("on")) {
+				subCommandOn(sender);
+			}
+			else if(subcommand.equals("off")) {
+				subCommandOff(sender);
+			}
+		}
+		else if(args.length == 2) {
+			subCommandScheduleCustomRestartTime(sender, args);
+		}
+		else {
+			//No sub-command matched, print the help:
+			sendFeedback(sender, ChatColor.RED + "Unknown subcommand!");
+			printHelp(sender);
+		}
 	}
 	
-	private void handleMemoryCommand(CommandSender sender)
-	{
-		if(checkIfHasNoPermission(sender, "memory")) {
+	//Restart in a given time:
+	private void subCommandScheduleCustomRestartTime(CommandSender sender, String[] args) {
+		//Parse the time unit:
+		Double timeToSecondConversionFactor = null;
+		if(args[0].length() == 1) {
+			char timeUnitLetter = args[0].charAt(0);
+			if(timeUnitLetter == 'h' || timeUnitLetter == 'H') {
+				timeToSecondConversionFactor = 3600.0;
+			}
+			else if(timeUnitLetter == 'm' || timeUnitLetter == 'M') {
+				timeToSecondConversionFactor = 60.0;
+			}
+			else if(timeUnitLetter == 's' || timeUnitLetter == 'S') {
+				timeToSecondConversionFactor = 1.0;
+			}
+		}
+		if(timeToSecondConversionFactor == null) {
+			sendFeedback(sender, ChatColor.RED + "Invalid time unit!");
+			sendFeedback(sender, ChatColor.AQUA + "Use 'h' for time in hours, 'm' for minutes and 's' for seconds as first argument.");
 			return;
 		}
 		
-		// Show memory usage:
+		//Parse the time amount:
+		double timeAmount;
+		try {
+			 timeAmount = Double.parseDouble(args[1]);
+		}
+		catch(Exception e) {
+			sendFeedback(sender, ChatColor.RED + "Could not parse second argument, expected a number.");
+			return;
+		}
+		
+		plugin.getLogger().info(sender.getName() + " is setting a new restart time...");
+		
+		if(plugin.autoRestart) {
+			plugin.cancelTasks(); //Cancel all running timers (given there are some).
+		}
+		
+		//Overwrite the restart interval with the command value:
+		double restartTimeInSeconds = timeAmount * timeToSecondConversionFactor;
+		plugin.restartInterval = restartTimeInSeconds / 3600.0;
+		
+		//Start the restart with the custom time again:
+		plugin.getLogger().info("Scheduling restart tasks...");
+		plugin.scheduleTasks();
+		
+		sendFeedback(sender, ChatColor.AQUA + "The server will be restarting in " + ChatColor.WHITE + getTimeUntilNextRestart());
+	}
+	
+	private void subCommandOn(CommandSender sender) {
+		//Check if not already on:
+		if(plugin.autoRestart) {
+			sendFeedback(sender, ChatColor.RED + "Automatic restart is already turned on.");
+			return;
+		}
+		
+		//Enable automated restart:
+		plugin.getLogger().info("Reloading configuration...");
+		plugin.loadConfiguration();
+		
+		plugin.getLogger().info("Scheduling restart tasks...");
+		plugin.autoRestart = true; //Has to be done after the config load to overwrite the active flag.
+		plugin.scheduleTasks();
+		
+		sendFeedback(sender, ChatColor.AQUA + "Automatic restarts have been turned on!");
+		plugin.getLogger().info(sender.getName() + " turned automatic restarts on!");
+		sendFeedback(sender, ChatColor.AQUA + "The server will be restarting in " + ChatColor.WHITE + getTimeUntilNextRestart());
+	}
+	
+	private void subCommandOff(CommandSender sender) {
+		//Abort command if auto-restart is already off:
+		if(!plugin.autoRestart) {
+			sendFeedback(sender, ChatColor.RED + "Automatic restart is already turned off.");
+			return;
+		}
+		
+		plugin.cancelTasks(); //Abort all currently running timers.
+		
+		sendFeedback(sender, ChatColor.AQUA + "Automatic restarts have been turned off!");
+		plugin.getLogger().info(sender.getName() + " turned automatic restarts off!");
+	}
+	
+	//Reports the time until the next scheduled restart:
+	private void subCommandTimeUntilRestart(CommandSender sender) {
+		//Abort if there is no restart pending:
+		if(!plugin.autoRestart) {
+			sendFeedback(sender, ChatColor.RED + "There is no auto-restart scheduled!");
+			return;
+		}
+		
+		sendFeedback(sender, ChatColor.AQUA + "The server will be restarting in " + ChatColor.WHITE + getTimeUntilNextRestart());
+	}
+	
+	private String getTimeUntilNextRestart() {
+		long restartIntervalInSeconds = (long) (plugin.restartInterval * 60.0 * 60.0);
+		long timeSinceRebootTimerStartInSeconds = (System.currentTimeMillis() - plugin.startTimestamp) / 1000L;
+		long secondsUntilReboot = restartIntervalInSeconds - timeSinceRebootTimerStartInSeconds;
+		int hours = (int) (secondsUntilReboot / 3600L);
+		int minutes = (int) ((secondsUntilReboot - hours * 3600L) / 60L);
+		int seconds = (int) secondsUntilReboot % 60;
+		return hours + "h" + minutes + "m" + seconds + "s";
+	}
+	
+	private void handleMemoryCommand(CommandSender sender) {
+		if(!sender.hasPermission("simplerestart.memory")) {
+			sendFeedback(sender, noPermissionMessage);
+			return;
+		}
+		
+		//Show memory usage:
 		Runtime runtime = Runtime.getRuntime();
 		float freeMemory = (float) runtime.freeMemory() / (1024F * 1024F);
 		float totalMemory = (float) runtime.totalMemory() / (1024F * 1024F);
@@ -224,26 +221,17 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 	private static void sendFeedback(CommandSender sender, String message) {
 		if(sender instanceof Player) {
 			sender.sendMessage(message);
-		} else {
+		}
+		else {
 			sender.sendMessage(ChatColor.stripColor(message));
 		}
 	}
 	
-	private boolean checkIfHasNoPermission(CommandSender sender, String permission)
-	{
-		// Check any type of sender, not only players.
-		if(sender.hasPermission("simplerestart."  + permission)) {
-			return false; // Return false, to not abort the command execution.
-		}
-		sendFeedback(sender, noPermissionMessage);
-		return true; // True aborts the command execution.
-	}
-	
-	private void showHelp(CommandSender sender) {
+	private void printHelp(CommandSender sender) {
 		StringBuilder builder = new StringBuilder();
-		// Title:
+		//Title:
 		builder.append(ChatColor.WHITE + "--- " + ChatColor.DARK_AQUA + "Restart " + ChatColor.AQUA + "Help " + ChatColor.WHITE + "---");
-		// Subcommands:
+		//Subcommands:
 		LinkedHashMap<String, String> helpList = new LinkedHashMap<>(); // Format: Command => Description.
 		helpList.put(ChatColor.DARK_AQUA + "/restart " + ChatColor.AQUA + "help", ChatColor.GRAY + "shows this help");
 		helpList.put(ChatColor.DARK_AQUA + "/restart " + ChatColor.AQUA + "now", ChatColor.GRAY + "restarts the server NOW");
@@ -255,10 +243,11 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 			builder.append('\n').append(entry.getKey()).append("\n     ").append(entry.getValue());
 		}
 		
-		// Send the help message:
+		//Send the help message:
 		if(sender instanceof Player) {
 			sender.sendMessage(builder.toString());
-		} else {
+		}
+		else {
 			sender.sendMessage(ChatColor.stripColor(builder.toString()));
 		}
 	}
