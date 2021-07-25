@@ -1,14 +1,20 @@
 package com.hamaluik.SimpleRestart;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
-public class SimpleRestartCommandListener implements CommandExecutor {
+public class SimpleRestartCommandListener implements CommandExecutor, TabCompleter {
 	private static final String noPermissionMessage = ChatColor.RED + "You don't have permission to do that!";
 	
 	private final SimpleRestart plugin;
@@ -19,15 +25,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 	
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-		//Since this is only one command handler, the label needs to be normalized.
-		// It may contain the plugin as prefix, which has to be removed.
-		{
-			int colonIndex = label.lastIndexOf(':');
-			if(colonIndex > -1)	{
-				label = label.substring(colonIndex + 1);
-			}
-			label = label.toLowerCase();
-		}
+		label = normalizeLabel(label);
 		
 		if(label.equals("memory")) {
 			handleMemoryCommand(sender);
@@ -249,6 +247,56 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 		}
 		else {
 			sender.sendMessage(ChatColor.stripColor(builder.toString()));
+		}
+	}
+	
+	private String normalizeLabel(String label)	{
+		//Since this is only one command handler, the label needs to be normalized.
+		// It may contain the plugin as prefix, which has to be removed.
+		int colonIndex = label.lastIndexOf(':');
+		if(colonIndex > -1)	{
+			label = label.substring(colonIndex + 1);
+		}
+		return label.toLowerCase();
+	}
+	
+	@Override
+	public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args)
+	{
+		label = normalizeLabel(label);
+		if(label.equals("memory")) {
+			return Collections.emptyList();
+		}
+		else {
+			if(args.length > 1) {
+				//Either the syntax is wrong, or we are expecting a number.
+				return Collections.emptyList();
+			}
+			//Collect allowed subcommands:
+			LinkedList<String> subcommands = new LinkedList<>();
+			if(!sender.hasPermission("simplerestart.restart")) {
+				if(sender.hasPermission("simplerestart.time")) {
+					//Can only use the time subcommand.
+					subcommands.add("time");
+				}
+				else {
+					//Has no permission.
+					return Collections.emptyList();
+				}
+			}
+			else {
+				subcommands.add("help");
+				subcommands.add("time");
+				subcommands.add("now");
+				subcommands.add("on");
+				subcommands.add("off");
+				subcommands.add("s");
+				subcommands.add("m");
+				subcommands.add("h");
+			}
+			//Filter by whatever the user already typed:
+			String userSubCommandStart = args[0].toLowerCase();
+			return subcommands.stream().filter(subcommand -> subcommand.startsWith(userSubCommandStart)).collect(Collectors.toList());
 		}
 	}
 }
