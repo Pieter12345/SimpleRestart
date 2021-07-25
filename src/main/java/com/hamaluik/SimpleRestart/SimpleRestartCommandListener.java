@@ -22,7 +22,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 				// make sure they have appropriate permission
 				if(sender instanceof Player) {
 					// only if they're a player
-					if(!plugin.hasPermission((Player)sender, "simplerestart.restart")) {
+					if(!sender.hasPermission("simplerestart.restart")) {
 						// no permission!
 						plugin.returnMessage(sender, "&cYou don't have permission to do that!");
 						return true;
@@ -39,7 +39,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 				// make sure they have appropriate permission
 				if(sender instanceof Player) {
 					// only if they're a player
-					if(!plugin.hasPermission((Player)sender, "simplerestart.time")) {
+					if(!sender.hasPermission("simplerestart.time")) {
 						// no permission!
 						plugin.returnMessage(sender, "&cYou don't have permission to do that!");
 						return true;
@@ -68,7 +68,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 				// make sure they have appropriate permission
 				if(sender instanceof Player) {
 					// only if they're a player
-					if(!plugin.hasPermission((Player)sender, "simplerestart.restart")) {
+					if(!sender.hasPermission("simplerestart.restart")) {
 						// no permission!
 						plugin.returnMessage(sender, "&cYou don't have permission to do that!");
 						return true;
@@ -83,7 +83,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 				// make sure they have appropriate permission
 				if(sender instanceof Player) {
 					// only if they're a player
-					if(!plugin.hasPermission((Player)sender, "simplerestart.restart")) {
+					if(!sender.hasPermission("simplerestart.restart")) {
 						// no permission!
 						plugin.returnMessage(sender, "&cYou don't have permission to do that!");
 						return true;
@@ -122,7 +122,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 				// make sure they have appropriate permission
 				if(sender instanceof Player) {
 					// only if they're a player
-					if(!plugin.hasPermission((Player)sender, "simplerestart.restart")) {
+					if(!sender.hasPermission("simplerestart.restart")) {
 						// no permission!
 						plugin.returnMessage(sender, "&cYou don't have permission to do that!");
 						return true;
@@ -150,7 +150,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 				// make sure they have appropriate permission
 				if(sender instanceof Player) {
 					// only if they're a player
-					if(!plugin.hasPermission((Player)sender, "simplerestart.restart")) {
+					if(!sender.hasPermission("simplerestart.restart")) {
 						// no permission!
 						plugin.returnMessage(sender, "&cYou don't have permission to do that!");
 						return true;
@@ -217,7 +217,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 			// first, make sure they have permission to deal with restart
 			if(sender instanceof Player) {
 				// only if they're a player
-				if(!plugin.hasPermission((Player)sender, "simplerestart.memory")) {
+				if(!sender.hasPermission("simplerestart.memory")) {
 					// no permission!
 					plugin.returnMessage(sender, "&cYou don't have permission to do that!");
 					return true;

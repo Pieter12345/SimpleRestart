@@ -12,24 +12,12 @@ import java.util.logging.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-//import org.bukkit.plugin.Plugin; // WoeshEdit - Commented out.
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.configuration.file.FileConfiguration;
-
-//import com.nijiko.permissions.PermissionHandler; // WoeshEdit - Commented out.
-//import com.nijikokun.bukkit.Permissions.Permissions; // WoeshEdit - Commented out.
-//
-//import ru.tehkode.permissions.bukkit.PermissionsEx; // WoeshEdit - Commented out.
-//import ru.tehkode.permissions.PermissionManager; // WoeshEdit - Commented out.
-//
-//import de.bananaco.bpermissions.api.WorldManager; // WoeshEdit - Commented out.
 
 public class SimpleRestart extends JavaPlugin {
 	// the basics
 	Logger log = Logger.getLogger("Minecraft");
-//	public PermissionHandler permissions3; // WoeshEdit - Commented out.
-//	public PermissionManager permissionsEx; // WoeshEdit - Commented out.
-//	public WorldManager bpermissions; // WoeshEdit - Commented out.
 	
 	// keep track of ourself!
 	SimpleRestart plugin = this;
@@ -57,7 +45,6 @@ public class SimpleRestart extends JavaPlugin {
 	@Override
 	public void onEnable() {		
 		// set up the plugin..
-		this.setupPermissions();
 		this.loadConfiguration();
 		this.getCommand("restart").setExecutor(commandListener);
 		this.getCommand("memory").setExecutor(commandListener);
@@ -77,51 +64,6 @@ public class SimpleRestart extends JavaPlugin {
 	public void onDisable() {
 		cancelTasks();
 		log.info("[SimpleRestart] plugin disabled");
-	}
-	
-	// load the permissions plugin..
-	private void setupPermissions() { // WoeshEdit - Replaced method.
-		log.info("[SimpleRestart] [WoeshEdit] Using Bukkits permission system.");
-//		if (this.bpermissions == null) {
-//			if (this.getServer().getPluginManager().isPluginEnabled("bPermissions")) {
-//				this.bpermissions = WorldManager.getInstance();
-//				log.info("[SimpleRestart] permissions (bPermissions-Plugin) successfully loaded");
-//				return;
-//			}
-//		}
-//		if (this.permissionsEx == null) {
-//			if (this.getServer().getPluginManager().isPluginEnabled("PermissionsEx")) {
-//				this.permissionsEx = PermissionsEx.getPermissionManager();
-//				log.info("[SimpleRestart] permissions (PermissionsEx-Plugin) successfully loaded");
-//				return;
-//			}
-//		}
-//		if (this.permissions3 == null) {
-//			Plugin permissions3Plugin = this.getServer().getPluginManager().getPlugin("Permissions");
-//			if (permissions3Plugin != null) {
-//				this.permissions3 = ((Permissions)permissions3Plugin).getHandler();
-//				log.info("[SimpleRestart] permissions (Permissions-Plugin) successfully loaded");
-//				return;
-//			}
-//		} else {
-//			log.info("[SimpleRestart] permission system not detected, defaulting to OP");
-//			return;
-//		}
-	}
-	
-	// just an interface function for checking permissions
-	// if permissions are down, default to OP status.
-	public boolean hasPermission(Player player, String permission) { // WoeshEdit - Replaced method.
-		return player.hasPermission(permission);
-//		if(permissions3 != null) {
-//			return (permissions3.has(player, permission));
-//		} else if (permissionsEx != null) {
-//			return (permissionsEx.has(player, permission));
-//		} else if (bpermissions != null) {
-//			return player.hasPermission(permission);
-//		} else {
-//			return player.isOp();
-//		}
 	}
 	
 	private void checkConfiguration() {
