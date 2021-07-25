@@ -22,8 +22,8 @@ public class SimpleRestart extends JavaPlugin {
 	private String restartMessage = "&cServer is restarting, we'll be right back!";
 	
 	// Timers:
-	public ArrayList<Timer> warningTimers = new ArrayList<>();
-	public Timer rebootTimer;
+	private final ArrayList<Timer> warningTimers = new ArrayList<>();
+	private Timer rebootTimer;
 	
 	// keep track of when we started the scheduler
 	// so that we know how much time is left
@@ -74,73 +74,65 @@ public class SimpleRestart extends JavaPlugin {
 	}
 	
 	protected void cancelTasks() {
-		//plugin.getServer().getScheduler().cancelTasks(plugin);
-		for(int i = 0; i < warningTimers.size(); i++) {
-			warningTimers.get(i).cancel();
+		//Cancel warning timers:
+		for(Timer warningTimer : warningTimers) {
+			warningTimer.cancel();
 		}
 		warningTimers.clear();
+		//Cancel restart timer:
 		if(rebootTimer != null) {
 			rebootTimer.cancel();
 		}
-		rebootTimer = new Timer();
+		rebootTimer = null;
+		//Disable auto-restart:
 		autoRestart = false;
 	}
 	
 	protected void scheduleTasks() {
 		cancelTasks();
-		// start the warning tasks
-		for(int i = 0; i < warnTimes.size(); i++) {
-			if(restartInterval * 60 - warnTimes.get(i) > 0) {
-				// only do "positive" warning times
-				// start the warning task
-				final double warnTime = warnTimes.get(i);
-				/*getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
-					public void run() {
-						getServer().broadcastMessage(processColours(warningMessage.replaceAll("%t", "" + warnTime)));
-						plugin.log.info("[SimpleRestart] " + stripColours(warningMessage.replaceAll("%t", "" + warnTime)));
-					}
-				}, (long)((restartInterval * 60 - warnTimes.get(i)) * 60.0 * 20.0));
-				
-				log.info("[SimpleRestart] warning scheduled for " + (long)((restartInterval * 60 - warnTimes.get(i)) * 60.0) + " seconds from now!");*/
+		//Start the tasks for warning-messages:
+		double restartIntervalInMinutes = restartInterval * 60.0;
+		for(double warnTime : warnTimes) {
+			//Only consider warning times before the reboot (non-negative):
+			if(restartIntervalInMinutes - warnTime > 0) {
+				//Start an asynchronous task to not depend on tick-speed.
+				long delayInSeconds = (long) ((restartIntervalInMinutes - warnTime) * 60.0);
 				Timer warnTimer = new Timer();
 				warningTimers.add(warnTimer);
 				warnTimer.schedule(new TimerTask() {
 					@Override
 					public void run() {
-						// WoeshEdit - Run the code on the server main thread (fixes ConcurrentModificationExceptions).
+						//Transfer the task to the main thread:
 						getServer().getScheduler().runTask(SimpleRestart.this, () -> {
 							getServer().broadcastMessage(warningMessage.replaceAll("%t", String.valueOf(warnTime)));
 							getLogger().info(ChatColor.stripColor(warningMessage.replaceAll("%t", String.valueOf(warnTime))));
 						});
 					}
-				}, (long)((restartInterval * 60 - warnTimes.get(i)) * 60000.0));
-				getLogger().info("Warning scheduled for " + (long)((restartInterval * 60 - warnTimes.get(i)) * 60.0) + " seconds from now!");
+				}, delayInSeconds * 1000L);
+				getLogger().info("Warning scheduled for " + delayInSeconds + " seconds from now!");
 			}
 		}
 		
-		// start the restart task
-		/*getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
-			public void run() {
-				stopServer();
-			}
-		}, (long)(restartInterval * 3600.0 * 20.0));*/
+		//Start the tasks for rebooting:
+		//Start an asynchronous task to not depend on tick-speed.
+		long delayInSeconds = (long) (restartIntervalInMinutes * 60.0);
 		rebootTimer = new Timer();
 		rebootTimer.schedule(new TimerTask() {
 			@Override
 			public void run() {
-				// WoeshEdit - Run the code on the server main thread (fixes ConcurrentModificationExceptions).
+				//Transfer the task to the main thread:
 				getServer().getScheduler().runTask(SimpleRestart.this, () -> {
 					stopServer();
 				});
 			}
-		}, (long)(restartInterval * 3600000.0));
+		}, delayInSeconds * 1000L);
+		getLogger().info("Reboot scheduled for " + delayInSeconds + " seconds from now!");
 		
-		getLogger().info("Reboot scheduled for " + (long)(restartInterval  * 3600.0) + " seconds from now!");
 		autoRestart = true;
 		startTimestamp = System.currentTimeMillis();
 	}
 	
-	// Kick all players from the server with a friendly message!
+	//Kick all players from the server with a friendly message!
 	private void clearServer() {
 		getServer().broadcastMessage(restartMessage);
 		for (Player player : getServer().getOnlinePlayers()) {
@@ -148,8 +140,8 @@ public class SimpleRestart extends JavaPlugin {
 		}
 	}
 	
-	// Shuts the server down!
-	protected boolean stopServer() {
+	//Shuts the server down!
+	protected void stopServer() {
 		// log it and empty out the server first
 		getLogger().info("Restarting...");
 		clearServer();
@@ -163,7 +155,7 @@ public class SimpleRestart extends JavaPlugin {
 			}
 		} catch (Exception e) {
 			getLogger().info("Something went wrong while touching restart.txt!");
-			return false;
+			return;
 		}
 		try {
 			getServer().savePlayers();
@@ -173,8 +165,6 @@ public class SimpleRestart extends JavaPlugin {
 			getServer().shutdown();
 		} catch (Exception e) {
 			getLogger().info("Something went wrong while saving & stopping!");
-			return false;
 		}
-		return true;
 	}
 }
