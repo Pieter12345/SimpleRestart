@@ -12,17 +12,9 @@ website: "https://github.com/Pieter12345/SimpleRestart"
 
 commands:
    restart:
-      description: restart the server!
-      usage: |
-            usage:
-                /restart now
-   reboot:
-      description: restart the server!
-      usage: |
-            usage:
-                /reboot now
+     aliases: reboot
+     permission: simplerestart.restart;simplerestart.time
+     description: Command to control the scheduled restart.
    memory:
-      description: gives memory usage information
-      usage: |
-            usage:
-                /memory
+      permission: simplerestart.memory
+      description: Gives server memory usage information.
