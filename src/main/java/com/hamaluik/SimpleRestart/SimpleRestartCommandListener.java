@@ -29,17 +29,11 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 			}
 			label = label.toLowerCase();
 		}
-
+		
 		if(label.equals("restart") || label.equals("reboot")) {
 			if(args.length == 1 && args[0].equalsIgnoreCase("now")) {
-				// make sure they have appropriate permission
-				if(sender instanceof Player) {
-					// only if they're a player
-					if(!sender.hasPermission("simplerestart.restart")) {
-						// no permission!
-						sender.sendMessage(noPermissionMessage);
-						return true;
-					}
+				if(checkIfHasNoPermission(sender, "restart")) {
+					return true;
 				}
 				
 				// restarting NOW
@@ -49,14 +43,8 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 			}
 			else if(args.length == 1 && args[0].equalsIgnoreCase("time")) {
 				// report the amount of time before the next restart
-				// make sure they have appropriate permission
-				if(sender instanceof Player) {
-					// only if they're a player
-					if(!sender.hasPermission("simplerestart.time")) {
-						// no permission!
-						sendFeedback(sender, noPermissionMessage);
-						return true;
-					}
+				if(checkIfHasNoPermission(sender, "time")) {
+					return true;
 				}
 				
 				if(!plugin.autoRestart) {
@@ -77,14 +65,8 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 				return true;
 			}
 			else if(args.length == 1 && args[0].equalsIgnoreCase("help")) {
-				// make sure they have appropriate permission
-				if(sender instanceof Player) {
-					// only if they're a player
-					if(!sender.hasPermission("simplerestart.restart")) {
-						// no permission!
-						sendFeedback(sender, noPermissionMessage);
-						return true;
-					}
+				if(checkIfHasNoPermission(sender, "restart")) {
+					return true;
 				}
 				
 				// show help!
@@ -92,14 +74,8 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 				return true;
 			}
 			else if(args.length == 1 && args[0].equalsIgnoreCase("on")) {
-				// make sure they have appropriate permission
-				if(sender instanceof Player) {
-					// only if they're a player
-					if(!sender.hasPermission("simplerestart.restart")) {
-						// no permission!
-						sendFeedback(sender, noPermissionMessage);
-						return true;
-					}
+				if(checkIfHasNoPermission(sender, "restart")) {
+					return true;
 				}
 				
 				// only if we're not already auto-restarting
@@ -110,14 +86,14 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 				
 				// turn auto-restarts back on..
 				plugin.autoRestart = true;
-				plugin.log.info("[SimpleRestart] reloading configuration..");
+				plugin.getLogger().info("Reloading configuration..");
 				plugin.loadConfiguration();
-				plugin.log.info("[SimpleRestart] scheduling restart tasks...");
+				plugin.getLogger().info("Scheduling restart tasks...");
 				plugin.scheduleTasks();
 				
 				// and inform!
 				sendFeedback(sender, ChatColor.AQUA + "Automatic restarts have been turned on!");
-				plugin.log.info("[SimpleRestart] " + sender.toString() + " turned automatic restarts on!");
+				plugin.getLogger().info(sender.getName() + " turned automatic restarts on!");
 				
 				// ok, now see how long is left!
 				// (in seconds)
@@ -131,14 +107,8 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 				return true;
 			}
 			else if(args.length == 1 && args[0].equalsIgnoreCase("off")) {
-				// make sure they have appropriate permission
-				if(sender instanceof Player) {
-					// only if they're a player
-					if(!sender.hasPermission("simplerestart.restart")) {
-						// no permission!
-						sendFeedback(sender, noPermissionMessage);
-						return true;
-					}
+				if(checkIfHasNoPermission(sender, "restart")) {
+					return true;
 				}
 				
 				// only if we're not already auto-restarting
@@ -152,21 +122,15 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 				
 				// and inform!
 				sendFeedback(sender, ChatColor.AQUA + "Automatic restarts have been turned off!");
-				plugin.log.info("[SimpleRestart] " + sender.toString() + " turned automatic restarts off!");
+				plugin.getLogger().info(sender.getName() + " turned automatic restarts off!");
 				
 				return true;
 			}
 			else if(args.length == 2) {
 				// restarting in a set time
 				// note: doing it this way DOES NOT give a restart warning
-				// make sure they have appropriate permission
-				if(sender instanceof Player) {
-					// only if they're a player
-					if(!sender.hasPermission("simplerestart.restart")) {
-						// no permission!
-						sendFeedback(sender, noPermissionMessage);
-						return true;
-					}
+				if(checkIfHasNoPermission(sender, "restart")) {
+					return true;
 				}
 				
 				String timeFormat = args[0];
@@ -197,7 +161,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 				}
 				
 				// log to console
-				plugin.log.info("[SimpleRestart] " + sender.toString() + " is setting a new restart time...");
+				plugin.getLogger().info(sender.getName() + " is setting a new restart time...");
 				
 				// ok, we have the proper time
 				// if the scheduler is already going, cancel it!
@@ -210,7 +174,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 				plugin.restartInterval = restartTime / 3600.0;
 				
 				// now, start it up again!
-				plugin.log.info("[SimpleRestart] scheduling restart tasks...");
+				plugin.getLogger().info("Scheduling restart tasks...");
 				plugin.scheduleTasks();
 				
 				// and inform!
@@ -225,17 +189,11 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 			}
 		}
 		else if(label.equals("memory")) {
-			// first, make sure they have permission to deal with restart
-			if(sender instanceof Player) {
-				// only if they're a player
-				if(!sender.hasPermission("simplerestart.memory")) {
-					// no permission!
-					sendFeedback(sender, noPermissionMessage);
-					return true;
-				}
+			if(checkIfHasNoPermission(sender, "memory")) {
+				return true;
 			}
 			
-			// show memory usage
+			// Show memory usage:
 			float freeMemory = (float)java.lang.Runtime.getRuntime().freeMemory() / (1024F * 1024F);
 			float totalMemory = (float)java.lang.Runtime.getRuntime().totalMemory() / (1024F * 1024F);
 			float maxMemory = (float)java.lang.Runtime.getRuntime().maxMemory() / (1024F * 1024F);
@@ -246,8 +204,8 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 			
 			return true;
 		}
-
-		// by default tell them they boofed it and show them the help
+		
+		// Assume the restart command failed and print the help for that one:
 		sendFeedback(sender, ChatColor.RED + "Invalid command usage!");
 		showHelp(sender);
 		return true;
@@ -259,6 +217,16 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 		} else {
 			sender.sendMessage(ChatColor.stripColor(message));
 		}
+	}
+	
+	private boolean checkIfHasNoPermission(CommandSender sender, String permission)
+	{
+		// Check any type of sender, not only players.
+		if(sender.hasPermission("simplerestart."  + permission)) {
+			return false; // Return false, to not abort the command execution.
+		}
+		sendFeedback(sender, noPermissionMessage);
+		return true; // True aborts the command execution.
 	}
 	
 	private void showHelp(CommandSender sender) {
