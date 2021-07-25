@@ -73,7 +73,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 			if(subcommand.equals("now")) {
 				//Perform restart now:
 				sendFeedback(sender, ChatColor.RED + "As per request, performing restart now!");
-				plugin.stopServer();
+				plugin.shutdownServer();
 			}
 			else if(subcommand.equals("time")) {
 				subCommandTimeUntilRestart(sender);
@@ -133,7 +133,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 		plugin.getLogger().info(sender.getName() + " is setting a new restart time...");
 		
 		if(plugin.autoRestart) {
-			plugin.cancelTasks(); //Cancel all running timers (given there are some).
+			plugin.cancelTimer(); //Cancel all running timers (given there are some).
 		}
 		
 		//Overwrite the restart interval with the command value:
@@ -142,7 +142,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 		
 		//Start the restart with the custom time again:
 		plugin.getLogger().info("Scheduling restart tasks...");
-		plugin.scheduleTasks();
+		plugin.scheduleTimer();
 		
 		sendFeedback(sender, ChatColor.AQUA + "The server will be restarting in " + ChatColor.WHITE + getTimeUntilNextRestart());
 	}
@@ -160,7 +160,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 		
 		plugin.getLogger().info("Scheduling restart tasks...");
 		plugin.autoRestart = true; //Has to be done after the config load to overwrite the active flag.
-		plugin.scheduleTasks();
+		plugin.scheduleTimer();
 		
 		sendFeedback(sender, ChatColor.AQUA + "Automatic restarts have been turned on!");
 		plugin.getLogger().info(sender.getName() + " turned automatic restarts on!");
@@ -174,7 +174,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 			return;
 		}
 		
-		plugin.cancelTasks(); //Abort all currently running timers.
+		plugin.cancelTimer(); //Abort all currently running timers.
 		
 		sendFeedback(sender, ChatColor.AQUA + "Automatic restarts have been turned off!");
 		plugin.getLogger().info(sender.getName() + " turned automatic restarts off!");

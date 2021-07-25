@@ -46,7 +46,7 @@ public class SimpleRestart extends JavaPlugin {
 		
 		// ok, now if we want to schedule a restart, do so!
 		if(autoRestart) {
-			scheduleTasks();
+			scheduleTimer();
 		}
 		else {
 			getLogger().info("No automatic restarts scheduled!");
@@ -55,7 +55,7 @@ public class SimpleRestart extends JavaPlugin {
 	
 	@Override
 	public void onDisable() {
-		cancelTasks(); //Stop pending tasks.
+		cancelTimer(); //Stop pending tasks.
 		getLogger().info("Plugin disabled");
 	}
 	
@@ -77,7 +77,7 @@ public class SimpleRestart extends JavaPlugin {
 		return str.replaceAll("(&([a-f0-9]))", ChatColor.COLOR_CHAR + "$2");
 	}
 	
-	protected void cancelTasks() {
+	protected void cancelTimer() {
 		//Cancel warning timers:
 		for(Timer warningTimer : warningTimers) {
 			warningTimer.cancel();
@@ -92,8 +92,8 @@ public class SimpleRestart extends JavaPlugin {
 		autoRestart = false;
 	}
 	
-	protected void scheduleTasks() {
-		cancelTasks();
+	protected void scheduleTimer() {
+		cancelTimer();
 		//Start the tasks for warning-messages:
 		double restartIntervalInMinutes = restartInterval * 60.0;
 		for(double warnTime : warnTimes) {
@@ -126,7 +126,7 @@ public class SimpleRestart extends JavaPlugin {
 			public void run() {
 				//Transfer the task to the main thread:
 				getServer().getScheduler().runTask(SimpleRestart.this, () -> {
-					stopServer();
+					shutdownServer();
 				});
 			}
 		}, delayInSeconds * 1000L);
@@ -145,7 +145,7 @@ public class SimpleRestart extends JavaPlugin {
 	}
 	
 	//Shuts the server down!
-	protected void stopServer() {
+	protected void shutdownServer() {
 		getLogger().info("Restarting...");
 		announceRestartAndKickPlayers();
 		
