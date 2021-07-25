@@ -1,11 +1,15 @@
 package com.hamaluik.SimpleRestart;
 
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import java.util.concurrent.TimeUnit;
 import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -133,7 +137,7 @@ public class SimpleRestart extends JavaPlugin {
 	}
 	
 	//Kick all players from the server with a friendly message!
-	private void clearServer() {
+	private void announceRestartAndKickPlayers() {
 		getServer().broadcastMessage(restartMessage);
 		for (Player player : getServer().getOnlinePlayers()) {
 			player.kickPlayer(ChatColor.stripColor(restartMessage));
@@ -142,21 +146,32 @@ public class SimpleRestart extends JavaPlugin {
 	
 	//Shuts the server down!
 	protected void stopServer() {
-		// log it and empty out the server first
 		getLogger().info("Restarting...");
-		clearServer();
+		announceRestartAndKickPlayers();
+		
+		//Touch the restart.txt file:
 		try {
-			File file = new File(getDataFolder().getAbsolutePath() + File.separator + "restart.txt");
-			getLogger().info("Touching restart.txt at: " + file.getAbsolutePath());
-			if (file.exists()) {
-				file.setLastModified(System.currentTimeMillis());
-			} else {
-				file.createNewFile();
+			Path dataFolder = getDataFolder().toPath();
+			if(!Files.exists(dataFolder)) {
+				Files.createDirectory(dataFolder);
+			}
+			dataFolder = dataFolder.toRealPath(LinkOption.NOFOLLOW_LINKS);
+			
+			Path restartFile = dataFolder.resolve("restart.txt");
+			getLogger().info("Touching restart.txt at: " + restartFile);
+			if(Files.exists(restartFile)) {
+				Files.setLastModifiedTime(restartFile, FileTime.from(System.currentTimeMillis(), TimeUnit.MILLISECONDS));
+			}
+			else {
+				Files.createFile(restartFile);
 			}
 		} catch (Exception e) {
-			getLogger().info("Something went wrong while touching restart.txt!");
+			getLogger().info("Something went wrong while touching restart.txt. See stacktrace.");
+			e.printStackTrace();
 			return;
 		}
+		
+		//Save the server and shut it down:
 		try {
 			getServer().savePlayers();
 			for(World world : getServer().getWorlds()) {
@@ -165,6 +180,7 @@ public class SimpleRestart extends JavaPlugin {
 			getServer().shutdown();
 		} catch (Exception e) {
 			getLogger().info("Something went wrong while saving & stopping!");
+			e.printStackTrace();
 		}
 	}
 }
