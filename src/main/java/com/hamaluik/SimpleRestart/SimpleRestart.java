@@ -47,6 +47,7 @@ public class SimpleRestart extends JavaPlugin {
 		// set up the plugin..
 		this.loadConfiguration();
 		this.getCommand("restart").setExecutor(commandListener);
+		this.getCommand("reboot").setExecutor(commandListener);
 		this.getCommand("memory").setExecutor(commandListener);
 		log.info("[SimpleRestart] plugin enabled");
 		

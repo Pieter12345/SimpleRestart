@@ -17,7 +17,17 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-		if(label.equalsIgnoreCase("restart") || label.equalsIgnoreCase("reboot")) {			
+		//Since this is only one command handler, the label needs to be normalized.
+		// It may contain the plugin as prefix, which has to be removed.
+		{
+			int colonIndex = label.lastIndexOf(':');
+			if(colonIndex > -1)	{
+				label = label.substring(colonIndex + 1);
+			}
+			label = label.toLowerCase();
+		}
+
+		if(label.equals("restart") || label.equals("reboot")) {
 			if(args.length == 1 && args[0].equalsIgnoreCase("now")) {
 				// make sure they have appropriate permission
 				if(sender instanceof Player) {
@@ -213,7 +223,7 @@ public class SimpleRestartCommandListener implements CommandExecutor {
 				return true;
 			}
 		}
-		else if(label.equalsIgnoreCase("memory")) {
+		else if(label.equals("memory")) {
 			// first, make sure they have permission to deal with restart
 			if(sender instanceof Player) {
 				// only if they're a player
