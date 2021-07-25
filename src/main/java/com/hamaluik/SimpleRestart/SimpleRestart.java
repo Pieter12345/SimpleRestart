@@ -52,6 +52,8 @@ public class SimpleRestart extends JavaPlugin {
 		this.restartIntervalInHours = restartIntervalInHours;
 	}
 	
+	//Core:
+	
 	@Override
 	public void onEnable() {
 		loadConfiguration();

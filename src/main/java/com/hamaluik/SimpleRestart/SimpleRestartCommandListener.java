@@ -63,7 +63,7 @@ public class SimpleRestartCommandListener implements CommandExecutor, TabComplet
 			}
 			return;
 		}
-		//At this point in time, the sender has permission to use the restart command.
+		//At this point, the sender has permission to use the restart command.
 		
 		if(args.length == 1) {
 			String subcommand = args[0].toLowerCase();
@@ -95,7 +95,7 @@ public class SimpleRestartCommandListener implements CommandExecutor, TabComplet
 		}
 	}
 	
-	//Restart in a given time:
+	//Restart in a by command provided time:
 	private void subCommandScheduleCustomRestartTime(CommandSender sender, String[] args) {
 		//Parse the time unit:
 		Double timeToSecondConversionFactor = null;
@@ -144,8 +144,9 @@ public class SimpleRestartCommandListener implements CommandExecutor, TabComplet
 		sendFeedback(sender, ChatColor.AQUA + "The server will be restarting in " + ChatColor.WHITE + getTimeUntilNextRestart());
 	}
 	
+	//Turns the automated restart on:
 	private void subCommandOn(CommandSender sender) {
-		//Check if not already on:
+		//Abort, if already on:
 		if(plugin.isAutomatedRestartEnabled()) {
 			sendFeedback(sender, ChatColor.RED + "Automatic restart is already turned on.");
 			return;
@@ -163,6 +164,7 @@ public class SimpleRestartCommandListener implements CommandExecutor, TabComplet
 		sendFeedback(sender, ChatColor.AQUA + "The server will be restarting in " + ChatColor.WHITE + getTimeUntilNextRestart());
 	}
 	
+	//Turns the automated restart off:
 	private void subCommandOff(CommandSender sender) {
 		//Abort command if auto-restart is already off:
 		if(!plugin.isAutomatedRestartEnabled()) {
@@ -197,6 +199,7 @@ public class SimpleRestartCommandListener implements CommandExecutor, TabComplet
 		return hours + "h" + minutes + "m" + seconds + "s";
 	}
 	
+	//Prints server memory usage.
 	private void handleMemoryCommand(CommandSender sender) {
 		if(!sender.hasPermission("simplerestart.memory")) {
 			sendFeedback(sender, noPermissionMessage);
