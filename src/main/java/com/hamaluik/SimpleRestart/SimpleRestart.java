@@ -68,51 +68,11 @@ public class SimpleRestart extends JavaPlugin {
 		log.info("[SimpleRestart] plugin disabled");
 	}
 	
-	private void checkConfiguration() {
-		// first, check to see if the file exists
-		File configFile = new File(getDataFolder() + "/config.yml");
-		if(!configFile.exists()) {
-			// file doesn't exist yet :/
-			log.info("[SimpleRestart] config file not found, will attempt to create a default!");
-			new File(getDataFolder().toString()).mkdir();
-			try {
-				// create the file
-				configFile.createNewFile();
-				// and attempt to write the defaults to it
-				FileWriter out = new FileWriter(getDataFolder() + "/config.yml");
-				out.write("---\r\n");
-				out.write("# enable / disable auto-restart\r\n");
-				out.write("auto-restart: yes\r\n");
-				out.write("\r\n");
-				out.write("# in hours (decimal points ok -- ex: 2.5)\r\n");
-				out.write("# must be > (warn-time / 60)\r\n");
-				out.write("auto-restart-interval: 24\r\n");
-				out.write("\r\n");
-				out.write("# warning times before reboot in minutes (decimal points ok -- ex: 2.5)\r\n");
-				out.write("warn-times: [10, 5, 2, 1]\r\n");
-				out.write("\r\n");
-				out.write("# what to tell players when warning about server reboot\r\n");
-				out.write("# CAN use minecraft classic server protocol colour codes\r\n");
-				out.write("# use %t to indicate time left to reboot\r\n");
-				out.write("warning-message: \"" + warningMessage + "\"\r\n");
-				out.write("\r\n");
-				out.write("# what to tell players when server reboots\r\n");
-				out.write("# CAN use minecraft classic server protocol colour codes\r\n");
-				out.write("restart-message: \"" + restartMessage + "\"\r\n");
-				out.close();
-			} catch(IOException ex) {
-				// something went wrong :/
-				log.info("[SimpleRestart] error: config file does not exist and could not be created");
-			}
-		}
-	}
-
 	public void loadConfiguration() {
-		// make sure the config exists
-		// and if it doesn't, make it!
-		this.checkConfiguration();
+		// Create default config, if it does not exist yet:
+		this.saveDefaultConfig();
 		
-		// ge the configuration..
+		// Get configuration values:
 		FileConfiguration config = getConfig();
 		this.autoRestart = config.getBoolean("auto-restart", true);
 		this.restartInterval = config.getDouble("auto-restart-interval", 8);

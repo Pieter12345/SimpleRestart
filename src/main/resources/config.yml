@@ -1,0 +1,20 @@
+# If the server should auto-restart
+auto-restart: yes
+
+# Time interval the server should restart in hours
+# You may use decimal points. Example: 2.5 (two and a half hours)
+auto-restart-interval: 24
+
+# List of times in minutes when upcoming server reboots should be announced
+# Each time must be smaller than the auto-restart-interval above (mind the time unit).
+# You may use decimal points. Example: 2.5 (two and a half minutes)
+warn-times: [10, 5, 2, 1]
+
+# Message broadcast when warning players about an upcoming server reboot
+# You may use minecraft classic server protocol color codes
+# Use %t to indicate time left until reboot
+warning-message: "&cServer will be restarting in %t minutes!"
+
+# Message broadcast to players when the server reboots
+# You may use minecraft classic server protocol color codes
+restart-message: "&cServer is restarting, we'll be right back!"

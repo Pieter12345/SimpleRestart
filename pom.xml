@@ -37,6 +37,7 @@
                 <includes>
                     <include>plugin.yml</include>
                     <include>simple_restart_helper.sh</include>
+					<include>config.yml</include>
                 </includes>
             </resource>
             <resource>
