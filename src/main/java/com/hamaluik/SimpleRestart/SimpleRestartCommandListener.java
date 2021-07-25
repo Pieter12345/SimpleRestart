@@ -1,6 +1,5 @@
 package com.hamaluik.SimpleRestart;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -130,13 +129,13 @@ public class SimpleRestartCommandListener implements CommandExecutor, TabComplet
 		
 		plugin.getLogger().info(sender.getName() + " is setting a new restart time...");
 		
-		if(plugin.autoRestart) {
+		if(plugin.isAutomatedRestartEnabled()) {
 			plugin.cancelTimer(); //Cancel all running timers (given there are some).
 		}
 		
 		//Overwrite the restart interval with the command value:
 		double restartTimeInSeconds = timeAmount * timeToSecondConversionFactor;
-		plugin.restartInterval = restartTimeInSeconds / 3600.0;
+		plugin.setRestartInterval(restartTimeInSeconds / 3600.0);
 		
 		//Start the restart with the custom time again:
 		plugin.getLogger().info("Scheduling restart tasks...");
@@ -147,7 +146,7 @@ public class SimpleRestartCommandListener implements CommandExecutor, TabComplet
 	
 	private void subCommandOn(CommandSender sender) {
 		//Check if not already on:
-		if(plugin.autoRestart) {
+		if(plugin.isAutomatedRestartEnabled()) {
 			sendFeedback(sender, ChatColor.RED + "Automatic restart is already turned on.");
 			return;
 		}
@@ -157,7 +156,6 @@ public class SimpleRestartCommandListener implements CommandExecutor, TabComplet
 		plugin.loadConfiguration();
 		
 		plugin.getLogger().info("Scheduling restart tasks...");
-		plugin.autoRestart = true; //Has to be done after the config load to overwrite the active flag.
 		plugin.scheduleTimer();
 		
 		sendFeedback(sender, ChatColor.AQUA + "Automatic restarts have been turned on!");
@@ -167,7 +165,7 @@ public class SimpleRestartCommandListener implements CommandExecutor, TabComplet
 	
 	private void subCommandOff(CommandSender sender) {
 		//Abort command if auto-restart is already off:
-		if(!plugin.autoRestart) {
+		if(!plugin.isAutomatedRestartEnabled()) {
 			sendFeedback(sender, ChatColor.RED + "Automatic restart is already turned off.");
 			return;
 		}
@@ -181,7 +179,7 @@ public class SimpleRestartCommandListener implements CommandExecutor, TabComplet
 	//Reports the time until the next scheduled restart:
 	private void subCommandTimeUntilRestart(CommandSender sender) {
 		//Abort if there is no restart pending:
-		if(!plugin.autoRestart) {
+		if(!plugin.isAutomatedRestartEnabled()) {
 			sendFeedback(sender, ChatColor.RED + "There is no auto-restart scheduled!");
 			return;
 		}
@@ -190,8 +188,8 @@ public class SimpleRestartCommandListener implements CommandExecutor, TabComplet
 	}
 	
 	private String getTimeUntilNextRestart() {
-		long restartIntervalInSeconds = (long) (plugin.restartInterval * 60.0 * 60.0);
-		long timeSinceRebootTimerStartInSeconds = (System.currentTimeMillis() - plugin.startTimestamp) / 1000L;
+		long restartIntervalInSeconds = (long) (plugin.getRestartInterval() * 60.0 * 60.0);
+		long timeSinceRebootTimerStartInSeconds = (System.currentTimeMillis() - plugin.getRebootTimerStartTime()) / 1000L;
 		long secondsUntilReboot = restartIntervalInSeconds - timeSinceRebootTimerStartInSeconds;
 		int hours = (int) (secondsUntilReboot / 3600L);
 		int minutes = (int) ((secondsUntilReboot - hours * 3600L) / 60L);

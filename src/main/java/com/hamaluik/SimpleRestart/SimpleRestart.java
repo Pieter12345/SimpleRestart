@@ -17,26 +17,43 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.configuration.file.FileConfiguration;
 
 public class SimpleRestart extends JavaPlugin {
-	// Configuration values:
-	protected boolean autoRestart = true;
-	protected double restartInterval = 1;
-	private List<Double> warnTimes;
-	// Ampersand will be replaced, as soon as the config is loaded! (Only here as default value for the config).
+	//Configuration values:
+	private boolean isAutomatedRestartEnabled = true;
+	private double restartIntervalInHours = 1;
+	private List<Double> warningTimes;
+	//Ampersand will be replaced, as soon as the config is loaded! (Only here as default value for the config).
 	private String warningMessage = "&cServer will be restarting in %t minutes!";
 	private String restartMessage = "&cServer is restarting, we'll be right back!";
 	
-	// Timers:
+	//Timers:
 	private final ArrayList<Timer> warningTimers = new ArrayList<>();
 	private Timer rebootTimer;
+	private long rebootTimerStartTime; //Keep track of when the timer started, to reconstruct remaining time.
 	
-	// keep track of when we started the scheduler
-	// so that we know how much time is left
-	protected long startTimestamp;
+	//Setters/Getters:
 	
-	// startup routine..
+	protected boolean isAutomatedRestartEnabled()
+	{
+		return isAutomatedRestartEnabled;
+	}
+	
+	protected long getRebootTimerStartTime()
+	{
+		return rebootTimerStartTime;
+	}
+	
+	protected double getRestartInterval()
+	{
+		return restartIntervalInHours;
+	}
+	
+	protected void setRestartInterval(double restartIntervalInHours)
+	{
+		this.restartIntervalInHours = restartIntervalInHours;
+	}
+	
 	@Override
 	public void onEnable() {
-		// set up the plugin..
 		loadConfiguration();
 		SimpleRestartCommandListener commandListener = new SimpleRestartCommandListener(this);
 		getCommand("restart").setExecutor(commandListener);
@@ -44,12 +61,11 @@ public class SimpleRestart extends JavaPlugin {
 		getCommand("memory").setExecutor(commandListener);
 		getLogger().info("Plugin enabled");
 		
-		// ok, now if we want to schedule a restart, do so!
-		if(autoRestart) {
+		if(isAutomatedRestartEnabled) {
 			scheduleTimer();
 		}
 		else {
-			getLogger().info("No automatic restarts scheduled!");
+			getLogger().info("No automatic restart scheduled!");
 		}
 	}
 	
@@ -59,20 +75,20 @@ public class SimpleRestart extends JavaPlugin {
 		getLogger().info("Plugin disabled");
 	}
 	
-	public void loadConfiguration() {
-		// Create default config, if it does not exist yet:
+	protected void loadConfiguration() {
+		//Create default config, if it does not exist yet:
 		saveDefaultConfig();
 		
-		// Get configuration values:
+		//Get configuration values:
 		FileConfiguration config = getConfig();
-		autoRestart = config.getBoolean("auto-restart", true);
-		restartInterval = config.getDouble("auto-restart-interval", 8);
-		warnTimes = config.getDoubleList("warn-times");
+		isAutomatedRestartEnabled = config.getBoolean("auto-restart", true);
+		restartIntervalInHours = config.getDouble("auto-restart-interval", 8);
+		warningTimes = config.getDoubleList("warn-times");
 		warningMessage = colorize(config.getString("warning-message", warningMessage));
 		restartMessage = colorize(config.getString("restart-message", restartMessage));
 	}
 	
-	// Colorizing for loaded config strings:
+	//Colorizing for loaded config strings:
 	private static String colorize(String str) {
 		return str.replaceAll("(&([a-f0-9]))", ChatColor.COLOR_CHAR + "$2");
 	}
@@ -89,14 +105,14 @@ public class SimpleRestart extends JavaPlugin {
 		}
 		rebootTimer = null;
 		//Disable auto-restart:
-		autoRestart = false;
+		isAutomatedRestartEnabled = false;
 	}
 	
 	protected void scheduleTimer() {
 		cancelTimer();
 		//Start the tasks for warning-messages:
-		double restartIntervalInMinutes = restartInterval * 60.0;
-		for(double warnTime : warnTimes) {
+		double restartIntervalInMinutes = restartIntervalInHours * 60.0;
+		for(double warnTime : warningTimes) {
 			//Only consider warning times before the reboot (non-negative):
 			if(restartIntervalInMinutes - warnTime > 0) {
 				//Start an asynchronous task to not depend on tick-speed.
@@ -132,8 +148,8 @@ public class SimpleRestart extends JavaPlugin {
 		}, delayInSeconds * 1000L);
 		getLogger().info("Reboot scheduled for " + delayInSeconds + " seconds from now!");
 		
-		autoRestart = true;
-		startTimestamp = System.currentTimeMillis();
+		isAutomatedRestartEnabled = true;
+		rebootTimerStartTime = System.currentTimeMillis();
 	}
 	
 	//Kick all players from the server with a friendly message!
