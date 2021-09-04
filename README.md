@@ -1,5 +1,6 @@
 # SimpleRestart
-Version 1.3.3 by FuzzyWuzzie and THExSYSTEM
+Original version 1.3.3 by FuzzyWuzzie and THExSYSTEM  
+New version 2.0.0 by Pieter12345 and Ecconia
 
 ## Description
 SimpleRestart is a plugin for Bukkit (a Minecraft server wrapper) which allows
@@ -9,9 +10,8 @@ yet straightforward commands, is easy to set up and use, and makes use of
 Permissions.
 
 ## More ...
-More informations can be found on the following pages:
+More information can be found on the following pages:
 
-* [SimpleRestart Code on GitHub](https://github.com/THExSYSTEM/SimpleRestart)
-* [SimpleRestart Builds on BukkitDev](http://dev.bukkit.org/server-mods/simple_restart/files/)
-* [SimpleRestart Project on BukkitDev](http://dev.bukkit.org/server-mods/simple_restart/)
+* [SimpleRestart new code on GitHub](https://github.com/Pieter12345/SimpleRestart)
+* [SimpleRestart original code on GitHub](https://github.com/hamaluik/SimpleRestart)
 * [SimpleRestart Thread on BukkitForums](http://forums.bukkit.org/threads/24652/)

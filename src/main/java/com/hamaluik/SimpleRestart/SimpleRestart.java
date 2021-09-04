@@ -1,317 +1,204 @@
 package com.hamaluik.SimpleRestart;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.logging.Logger;
 
-import org.bukkit.Bukkit;
-import org.bukkit.command.CommandSender;
+import java.util.concurrent.TimeUnit;
+import org.bukkit.ChatColor;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
-//import org.bukkit.plugin.Plugin; // WoeshEdit - Commented out.
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.configuration.file.FileConfiguration;
 
-//import com.nijiko.permissions.PermissionHandler; // WoeshEdit - Commented out.
-//import com.nijikokun.bukkit.Permissions.Permissions; // WoeshEdit - Commented out.
-//
-//import ru.tehkode.permissions.bukkit.PermissionsEx; // WoeshEdit - Commented out.
-//import ru.tehkode.permissions.PermissionManager; // WoeshEdit - Commented out.
-//
-//import de.bananaco.bpermissions.api.WorldManager; // WoeshEdit - Commented out.
-
 public class SimpleRestart extends JavaPlugin {
-	// the basics
-	Logger log = Logger.getLogger("Minecraft");
-//	public PermissionHandler permissions3; // WoeshEdit - Commented out.
-//	public PermissionManager permissionsEx; // WoeshEdit - Commented out.
-//	public WorldManager bpermissions; // WoeshEdit - Commented out.
 	
-	// keep track of ourself!
-	SimpleRestart plugin = this;
-	// and the command executor!
-	SimpleRestartCommandListener commandListener = new SimpleRestartCommandListener(this);
+	// Configuration values:
+	private boolean isAutomatedRestartEnabled = true;
+	private double restartIntervalInHours = 1;
+	private List<Double> warningTimes;
+	// Ampersand will be replaced, as soon as the config is loaded! (Only here as default value for the config).
+	private String warningMessage = "&cServer will be restarting in %t minutes!";
+	private String restartMessage = "&cServer is restarting, we'll be right back!";
 	
-	// options
-	boolean autoRestart = true;
-	double restartInterval = 1;
-	List<Double> warnTimes;
-	boolean delayUntilEmpty = false;
-	int maxPlayersConsideredEmpty = 0;
-	String warningMessage = new String("&cServer will be restarting in %t minutes!");
-	String restartMessage = new String("&cServer is restarting, we'll be right back!");
+	// Timers:
+	private final ArrayList<Timer> warningTimers = new ArrayList<>();
+	private Timer rebootTimer;
+	private long rebootTimerStartTime; // Keep track of when the timer started, to reconstruct remaining time.
 	
-	// timers
-	public ArrayList<Timer> warningTimers = new ArrayList<Timer>();
-	public Timer rebootTimer;
+	// Setters/Getters:
 	
-	// keep track of when we started the scheduler
-	// so that we know how much time is left
-	long startTimestamp;
+	protected boolean isAutomatedRestartEnabled() {
+		return this.isAutomatedRestartEnabled;
+	}
 	
-	// startup routine..
+	protected long getRebootTimerStartTime() {
+		return this.rebootTimerStartTime;
+	}
+	
+	protected double getRestartInterval() {
+		return this.restartIntervalInHours;
+	}
+	
+	protected void setRestartInterval(double restartIntervalInHours) {
+		this.restartIntervalInHours = restartIntervalInHours;
+	}
+	
+	// Core:
+	
 	@Override
-	public void onEnable() {		
-		// set up the plugin..
-		this.setupPermissions();
+	public void onEnable() {
 		this.loadConfiguration();
+		SimpleRestartCommandListener commandListener = new SimpleRestartCommandListener(this);
 		this.getCommand("restart").setExecutor(commandListener);
+		this.getCommand("reboot").setExecutor(commandListener);
 		this.getCommand("memory").setExecutor(commandListener);
-		log.info("[SimpleRestart] plugin enabled");
+		this.getLogger().info("Plugin enabled");
 		
-		// ok, now if we want to schedule a restart, do so!
-		if(autoRestart) {
-			scheduleTasks();
-		}
-		else {
-			log.info("[SimpleRestart] No automatic restarts scheduled!");
+		if(this.isAutomatedRestartEnabled) {
+			this.scheduleTimer();
+		} else {
+			this.getLogger().info("No automatic restart scheduled!");
 		}
 	}
-
-	// shutdown routine
+	
 	@Override
 	public void onDisable() {
-		cancelTasks();
-		log.info("[SimpleRestart] plugin disabled");
+		this.cancelTimer(); // Stop pending tasks.
+		this.getLogger().info("Plugin disabled");
 	}
 	
-	// load the permissions plugin..
-	private void setupPermissions() { // WoeshEdit - Replaced method.
-		log.info("[SimpleRestart] [WoeshEdit] Using Bukkits permission system.");
-//		if (this.bpermissions == null) {
-//			if (this.getServer().getPluginManager().isPluginEnabled("bPermissions")) {
-//				this.bpermissions = WorldManager.getInstance();
-//				log.info("[SimpleRestart] permissions (bPermissions-Plugin) successfully loaded");
-//				return;
-//			}
-//		}
-//		if (this.permissionsEx == null) {
-//			if (this.getServer().getPluginManager().isPluginEnabled("PermissionsEx")) {
-//				this.permissionsEx = PermissionsEx.getPermissionManager();
-//				log.info("[SimpleRestart] permissions (PermissionsEx-Plugin) successfully loaded");
-//				return;
-//			}
-//		}
-//		if (this.permissions3 == null) {
-//			Plugin permissions3Plugin = this.getServer().getPluginManager().getPlugin("Permissions");
-//			if (permissions3Plugin != null) {
-//				this.permissions3 = ((Permissions)permissions3Plugin).getHandler();
-//				log.info("[SimpleRestart] permissions (Permissions-Plugin) successfully loaded");
-//				return;
-//			}
-//		} else {
-//			log.info("[SimpleRestart] permission system not detected, defaulting to OP");
-//			return;
-//		}
-	}
-	
-	// just an interface function for checking permissions
-	// if permissions are down, default to OP status.
-	public boolean hasPermission(Player player, String permission) { // WoeshEdit - Replaced method.
-		return player.hasPermission(permission);
-//		if(permissions3 != null) {
-//			return (permissions3.has(player, permission));
-//		} else if (permissionsEx != null) {
-//			return (permissionsEx.has(player, permission));
-//		} else if (bpermissions != null) {
-//			return player.hasPermission(permission);
-//		} else {
-//			return player.isOp();
-//		}
-	}
-	
-	private void checkConfiguration() {
-		// first, check to see if the file exists
-		File configFile = new File(getDataFolder() + "/config.yml");
-		if(!configFile.exists()) {
-			// file doesn't exist yet :/
-			log.info("[SimpleRestart] config file not found, will attempt to create a default!");
-			new File(getDataFolder().toString()).mkdir();
-			try {
-				// create the file
-				configFile.createNewFile();
-				// and attempt to write the defaults to it
-				FileWriter out = new FileWriter(getDataFolder() + "/config.yml");
-				out.write("---\r\n");
-				out.write("# enable / disable auto-restart\r\n");
-				out.write("auto-restart: yes\r\n");
-				out.write("\r\n");
-				out.write("# in hours (decimal points ok -- ex: 2.5)\r\n");
-				out.write("# must be > (warn-time / 60)\r\n");
-				out.write("auto-restart-interval: 24\r\n");
-				out.write("\r\n");
-				out.write("# warning times before reboot in minutes (decimal points ok -- ex: 2.5)\r\n");
-				out.write("warn-times: [10, 5, 2, 1]\r\n");
-				out.write("\r\n");
-				out.write("# what to tell players when warning about server reboot\r\n");
-				out.write("# CAN use minecraft classic server protocol colour codes\r\n");
-				out.write("# use %t to indicate time left to reboot\r\n");
-				out.write("warning-message: \"&cServer will be restarting in %t minutes!\"\r\n");
-				out.write("\r\n");
-				out.write("# what to tell players when server reboots\r\n");
-				out.write("# CAN use minecraft classic server protocol colour codes\r\n");
-				out.write("restart-message: \"&cServer is restarting, we'll be right back!\"\r\n");
-				out.close();
-			} catch(IOException ex) {
-				// something went wrong :/
-				log.info("[SimpleRestart] error: config file does not exist and could not be created");
-			}
-		}
-	}
-
-	public void loadConfiguration() {
-		// make sure the config exists
-		// and if it doesn't, make it!
-		this.checkConfiguration();
+	protected void loadConfiguration() {
+		// Create default config, if it does not exist yet:
+		this.saveDefaultConfig();
 		
-		// ge the configuration..
-		FileConfiguration config = getConfig();
-		this.autoRestart = config.getBoolean("auto-restart", true);
-		this.restartInterval = config.getDouble("auto-restart-interval", 8);
-		this.warnTimes = config.getDoubleList("warn-times");
-		this.warningMessage = config.getString("warning-message", "&cServer will be restarting in %t minutes!");
-		this.restartMessage = config.getString("restart-message", "&cServer is restarting, we'll be right back!");
+		// Get configuration values:
+		FileConfiguration config = this.getConfig();
+		this.isAutomatedRestartEnabled = config.getBoolean("auto-restart", true);
+		this.restartIntervalInHours = config.getDouble("auto-restart-interval", 8);
+		this.warningTimes = config.getDoubleList("warn-times");
+		this.warningMessage = colorize(config.getString("warning-message", warningMessage));
+		this.restartMessage = colorize(config.getString("restart-message", restartMessage));
 	}
 	
-	// allow for colour tags to be used in strings..
-	public String processColours(String str) {
-		return str.replaceAll("(&([a-f0-9]))", "\u00A7$2");
+	// Colorizing for loaded config strings:
+	private static String colorize(String str) {
+		return str.replaceAll("(&([a-f0-9]))", ChatColor.COLOR_CHAR + "$2");
 	}
 	
-	// strip colour tags from strings..
-	public String stripColours(String str) {
-		return str.replaceAll("(&([a-f0-9]))", "");
-	}
-	
-	public void returnMessage(CommandSender sender, String message) {
-		if(sender instanceof Player) {
-			sender.sendMessage(plugin.processColours(message));
-		} else {
-			sender.sendMessage(plugin.stripColours(message));
+	protected void cancelTimer() {
+		// Cancel warning timers:
+		for(Timer warningTimer : this.warningTimers) {
+			warningTimer.cancel();
 		}
+		this.warningTimers.clear();
+		
+		// Cancel restart timer:
+		if(this.rebootTimer != null) {
+			this.rebootTimer.cancel();
+		}
+		this.rebootTimer = null;
+		
+		// Disable auto-restart:
+		this.isAutomatedRestartEnabled = false;
 	}
 	
-	protected void cancelTasks() {
-		//plugin.getServer().getScheduler().cancelTasks(plugin);
-		for(int i = 0; i < warningTimers.size(); i++) {
-			warningTimers.get(i).cancel();
-		}
-		warningTimers.clear();
-		if(rebootTimer != null) {
-			rebootTimer.cancel();
-		}
-		rebootTimer = new Timer();
-		plugin.autoRestart = false;
-	}
-	
-	protected void scheduleTasks() {
-		cancelTasks();
-		// start the warning tasks
-		for(int i = 0; i < warnTimes.size(); i++) {
-			if(restartInterval * 60 - warnTimes.get(i) > 0) {
-				// only do "positive" warning times
-				// start the warning task
-				final double warnTime = warnTimes.get(i);
-				/*getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
-					public void run() {
-						getServer().broadcastMessage(processColours(warningMessage.replaceAll("%t", "" + warnTime)));
-						plugin.log.info("[SimpleRestart] " + stripColours(warningMessage.replaceAll("%t", "" + warnTime)));
-					}
-				}, (long)((restartInterval * 60 - warnTimes.get(i)) * 60.0 * 20.0));
-				
-				log.info("[SimpleRestart] warning scheduled for " + (long)((restartInterval * 60 - warnTimes.get(i)) * 60.0) + " seconds from now!");*/
+	protected void scheduleTimer() {
+		this.cancelTimer();
+		// Start the tasks for warning-messages:
+		double restartIntervalInMinutes = this.restartIntervalInHours * 60.0;
+		for(double warnTime : this.warningTimes) {
+			// Only consider warning times before the reboot (non-negative):
+			if(restartIntervalInMinutes - warnTime > 0) {
+				// Start an asynchronous task to not depend on tick-speed.
+				long delayInSeconds = (long) ((restartIntervalInMinutes - warnTime) * 60.0);
 				Timer warnTimer = new Timer();
-				warningTimers.add(warnTimer);
+				this.warningTimers.add(warnTimer);
 				warnTimer.schedule(new TimerTask() {
 					@Override
 					public void run() {
-						// WoeshEdit - Run the code on the server main thread (fixes ConcurrentModificationExceptions).
-						Bukkit.getScheduler().runTask(plugin, new Runnable() {
-							@Override
-							public void run() {
-								getServer().broadcastMessage(processColours(warningMessage.replaceAll("%t", "" + warnTime)));
-								plugin.log.info("[SimpleRestart] " + stripColours(warningMessage.replaceAll("%t", "" + warnTime)));
-							}
+						// Transfer the task to the main thread:
+						SimpleRestart.this.getServer().getScheduler().runTask(SimpleRestart.this, () -> {
+							SimpleRestart.this.getServer().broadcastMessage(
+									SimpleRestart.this.warningMessage.replaceAll("%t", String.valueOf(warnTime)));
+							SimpleRestart.this.getLogger().info(ChatColor.stripColor(
+									SimpleRestart.this.warningMessage.replaceAll("%t", String.valueOf(warnTime))));
 						});
 					}
-				}, (long)((restartInterval * 60 - warnTimes.get(i)) * 60000.0));
-				log.info("[SimpleRestart] warning scheduled for " + (long)((restartInterval * 60 - warnTimes.get(i)) * 60.0) + " seconds from now!");
+				}, delayInSeconds * 1000L);
+				this.getLogger().info("Warning scheduled for " + delayInSeconds + " seconds from now!");
 			}
 		}
-
-		// start the restart task
-		/*getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
-			public void run() {
-				stopServer();
-			}
-		}, (long)(restartInterval * 3600.0 * 20.0));*/
-		rebootTimer = new Timer();
-		rebootTimer.schedule(new TimerTask() {
+		
+		// Start the tasks for rebooting:
+		// Start an asynchronous task to not depend on tick-speed.
+		long delayInSeconds = (long) (restartIntervalInMinutes * 60.0);
+		this.rebootTimer = new Timer();
+		this.rebootTimer.schedule(new TimerTask() {
 			@Override
 			public void run() {
-				// WoeshEdit - Run the code on the server main thread (fixes ConcurrentModificationExceptions).
-				Bukkit.getScheduler().runTask(plugin, new Runnable() {
-					@Override
-					public void run() {
-						stopServer();
-					}
+				// Transfer the task to the main thread:
+				SimpleRestart.this.getServer().getScheduler().runTask(SimpleRestart.this, () -> {
+					SimpleRestart.this.shutdownServer();
 				});
 			}
-		}, (long)(restartInterval * 3600000.0));
+		}, delayInSeconds * 1000L);
+		this.getLogger().info("Reboot scheduled for " + delayInSeconds + " seconds from now!");
 		
-		log.info("[SimpleRestart] reboot scheduled for " + (long)(restartInterval  * 3600.0) + " seconds from now!");
-		plugin.autoRestart = true;
-		plugin.startTimestamp = System.currentTimeMillis();
+		this.isAutomatedRestartEnabled = true;
+		this.rebootTimerStartTime = System.currentTimeMillis();
 	}
 	
-	// kick all players from the server
-	// with a friendly message!
-	private void clearServer() {
-		this.getServer().broadcastMessage(processColours(restartMessage));
-		Player[] players = this.getServer().getOnlinePlayers().toArray(new Player[0]); // WoeshEdit - Added ".toArray(new Player[0])".
-		for (Player player : players) {
-			player.kickPlayer(stripColours(restartMessage));
+	// Kick all players from the server with a friendly message!
+	private void announceRestartAndKickPlayers() {
+		this.getServer().broadcastMessage(this.restartMessage);
+		for(Player player : this.getServer().getOnlinePlayers()) {
+			player.kickPlayer(ChatColor.stripColor(this.restartMessage));
 		}
 	}
 	
-	// shut the server down!
-	// hack into craftbukkit in order to do this
-	// since bukkit doesn't normally allow access -_-
-	// full kudos to the Redecouverte at:
-	// http://forums.bukkit.org/threads/send-commands-to-console.3241/
-	// for the code on executing commands as the console
-	protected boolean stopServer() {
-		// log it and empty out the server first
-		log.info("[SimpleRestart] Restarting...");
-		clearServer();
+	// Shuts the server down!
+	protected void shutdownServer() {
+		this.getLogger().info("Restarting...");
+		this.announceRestartAndKickPlayers();
+		
+		// Touch the restart.txt file:
 		try {
-			File file = new File(this.getDataFolder().getAbsolutePath() + File.separator + "restart.txt");
-			log.info("[SimpleRestart] Touching restart.txt at: " + file.getAbsolutePath());
-			if (file.exists()) {
-				file.setLastModified(System.currentTimeMillis());
+			Path dataFolder = getDataFolder().toPath();
+			if(!Files.exists(dataFolder)) {
+				Files.createDirectory(dataFolder);
+			}
+			dataFolder = dataFolder.toRealPath(LinkOption.NOFOLLOW_LINKS);
+			
+			Path restartFile = dataFolder.resolve("restart.txt");
+			this.getLogger().info("Touching restart.txt at: " + restartFile);
+			if(Files.exists(restartFile)) {
+				Files.setLastModifiedTime(restartFile,
+						FileTime.from(System.currentTimeMillis(), TimeUnit.MILLISECONDS));
 			} else {
-				file.createNewFile();
+				Files.createFile(restartFile);
 			}
 		} catch (Exception e) {
-			log.info("[SimpleRestart] Something went wrong while touching restart.txt!");
-			return false;
+			this.getLogger().info("Something went wrong while touching restart.txt. See stacktrace.");
+			e.printStackTrace();
+			return;
 		}
+		
+		//Save the server and shut it down:
 		try {
-//            this.getServer().dispatchCommand(this.getServer().getConsoleSender(), "save-all");
-//            this.getServer().dispatchCommand(this.getServer().getConsoleSender(), "stop");
 			this.getServer().savePlayers();
-			for(org.bukkit.World world : this.getServer().getWorlds()) {
+			for(World world : this.getServer().getWorlds()) {
 				world.save();
 			}
-            this.getServer().shutdown();
+			this.getServer().shutdown();
 		} catch (Exception e) {
-			log.info("[SimpleRestart] Something went wrong while saving & stoping!");
-			return false;
+			this.getLogger().info("Something went wrong while saving & stopping!");
+			e.printStackTrace();
 		}
-		return true;
 	}
 }
