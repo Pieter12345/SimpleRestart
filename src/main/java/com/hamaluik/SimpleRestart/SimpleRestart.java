@@ -17,157 +17,157 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.configuration.file.FileConfiguration;
 
 public class SimpleRestart extends JavaPlugin {
-	//Configuration values:
+	
+	// Configuration values:
 	private boolean isAutomatedRestartEnabled = true;
 	private double restartIntervalInHours = 1;
 	private List<Double> warningTimes;
-	//Ampersand will be replaced, as soon as the config is loaded! (Only here as default value for the config).
+	// Ampersand will be replaced, as soon as the config is loaded! (Only here as default value for the config).
 	private String warningMessage = "&cServer will be restarting in %t minutes!";
 	private String restartMessage = "&cServer is restarting, we'll be right back!";
 	
-	//Timers:
+	// Timers:
 	private final ArrayList<Timer> warningTimers = new ArrayList<>();
 	private Timer rebootTimer;
-	private long rebootTimerStartTime; //Keep track of when the timer started, to reconstruct remaining time.
+	private long rebootTimerStartTime; // Keep track of when the timer started, to reconstruct remaining time.
 	
-	//Setters/Getters:
+	// Setters/Getters:
 	
-	protected boolean isAutomatedRestartEnabled()
-	{
-		return isAutomatedRestartEnabled;
+	protected boolean isAutomatedRestartEnabled() {
+		return this.isAutomatedRestartEnabled;
 	}
 	
-	protected long getRebootTimerStartTime()
-	{
-		return rebootTimerStartTime;
+	protected long getRebootTimerStartTime() {
+		return this.rebootTimerStartTime;
 	}
 	
-	protected double getRestartInterval()
-	{
-		return restartIntervalInHours;
+	protected double getRestartInterval() {
+		return this.restartIntervalInHours;
 	}
 	
-	protected void setRestartInterval(double restartIntervalInHours)
-	{
+	protected void setRestartInterval(double restartIntervalInHours) {
 		this.restartIntervalInHours = restartIntervalInHours;
 	}
 	
-	//Core:
+	// Core:
 	
 	@Override
 	public void onEnable() {
-		loadConfiguration();
+		this.loadConfiguration();
 		SimpleRestartCommandListener commandListener = new SimpleRestartCommandListener(this);
-		getCommand("restart").setExecutor(commandListener);
-		getCommand("reboot").setExecutor(commandListener);
-		getCommand("memory").setExecutor(commandListener);
-		getLogger().info("Plugin enabled");
+		this.getCommand("restart").setExecutor(commandListener);
+		this.getCommand("reboot").setExecutor(commandListener);
+		this.getCommand("memory").setExecutor(commandListener);
+		this.getLogger().info("Plugin enabled");
 		
-		if(isAutomatedRestartEnabled) {
-			scheduleTimer();
-		}
-		else {
-			getLogger().info("No automatic restart scheduled!");
+		if(this.isAutomatedRestartEnabled) {
+			this.scheduleTimer();
+		} else {
+			this.getLogger().info("No automatic restart scheduled!");
 		}
 	}
 	
 	@Override
 	public void onDisable() {
-		cancelTimer(); //Stop pending tasks.
-		getLogger().info("Plugin disabled");
+		this.cancelTimer(); // Stop pending tasks.
+		this.getLogger().info("Plugin disabled");
 	}
 	
 	protected void loadConfiguration() {
-		//Create default config, if it does not exist yet:
-		saveDefaultConfig();
+		// Create default config, if it does not exist yet:
+		this.saveDefaultConfig();
 		
-		//Get configuration values:
-		FileConfiguration config = getConfig();
-		isAutomatedRestartEnabled = config.getBoolean("auto-restart", true);
-		restartIntervalInHours = config.getDouble("auto-restart-interval", 8);
-		warningTimes = config.getDoubleList("warn-times");
-		warningMessage = colorize(config.getString("warning-message", warningMessage));
-		restartMessage = colorize(config.getString("restart-message", restartMessage));
+		// Get configuration values:
+		FileConfiguration config = this.getConfig();
+		this.isAutomatedRestartEnabled = config.getBoolean("auto-restart", true);
+		this.restartIntervalInHours = config.getDouble("auto-restart-interval", 8);
+		this.warningTimes = config.getDoubleList("warn-times");
+		this.warningMessage = colorize(config.getString("warning-message", warningMessage));
+		this.restartMessage = colorize(config.getString("restart-message", restartMessage));
 	}
 	
-	//Colorizing for loaded config strings:
+	// Colorizing for loaded config strings:
 	private static String colorize(String str) {
 		return str.replaceAll("(&([a-f0-9]))", ChatColor.COLOR_CHAR + "$2");
 	}
 	
 	protected void cancelTimer() {
-		//Cancel warning timers:
-		for(Timer warningTimer : warningTimers) {
+		// Cancel warning timers:
+		for(Timer warningTimer : this.warningTimers) {
 			warningTimer.cancel();
 		}
-		warningTimers.clear();
-		//Cancel restart timer:
-		if(rebootTimer != null) {
-			rebootTimer.cancel();
+		this.warningTimers.clear();
+		
+		// Cancel restart timer:
+		if(this.rebootTimer != null) {
+			this.rebootTimer.cancel();
 		}
-		rebootTimer = null;
-		//Disable auto-restart:
-		isAutomatedRestartEnabled = false;
+		this.rebootTimer = null;
+		
+		// Disable auto-restart:
+		this.isAutomatedRestartEnabled = false;
 	}
 	
 	protected void scheduleTimer() {
-		cancelTimer();
-		//Start the tasks for warning-messages:
-		double restartIntervalInMinutes = restartIntervalInHours * 60.0;
-		for(double warnTime : warningTimes) {
-			//Only consider warning times before the reboot (non-negative):
+		this.cancelTimer();
+		// Start the tasks for warning-messages:
+		double restartIntervalInMinutes = this.restartIntervalInHours * 60.0;
+		for(double warnTime : this.warningTimes) {
+			// Only consider warning times before the reboot (non-negative):
 			if(restartIntervalInMinutes - warnTime > 0) {
-				//Start an asynchronous task to not depend on tick-speed.
+				// Start an asynchronous task to not depend on tick-speed.
 				long delayInSeconds = (long) ((restartIntervalInMinutes - warnTime) * 60.0);
 				Timer warnTimer = new Timer();
-				warningTimers.add(warnTimer);
+				this.warningTimers.add(warnTimer);
 				warnTimer.schedule(new TimerTask() {
 					@Override
 					public void run() {
-						//Transfer the task to the main thread:
-						getServer().getScheduler().runTask(SimpleRestart.this, () -> {
-							getServer().broadcastMessage(warningMessage.replaceAll("%t", String.valueOf(warnTime)));
-							getLogger().info(ChatColor.stripColor(warningMessage.replaceAll("%t", String.valueOf(warnTime))));
+						// Transfer the task to the main thread:
+						SimpleRestart.this.getServer().getScheduler().runTask(SimpleRestart.this, () -> {
+							SimpleRestart.this.getServer().broadcastMessage(
+									SimpleRestart.this.warningMessage.replaceAll("%t", String.valueOf(warnTime)));
+							SimpleRestart.this.getLogger().info(ChatColor.stripColor(
+									SimpleRestart.this.warningMessage.replaceAll("%t", String.valueOf(warnTime))));
 						});
 					}
 				}, delayInSeconds * 1000L);
-				getLogger().info("Warning scheduled for " + delayInSeconds + " seconds from now!");
+				this.getLogger().info("Warning scheduled for " + delayInSeconds + " seconds from now!");
 			}
 		}
 		
-		//Start the tasks for rebooting:
-		//Start an asynchronous task to not depend on tick-speed.
+		// Start the tasks for rebooting:
+		// Start an asynchronous task to not depend on tick-speed.
 		long delayInSeconds = (long) (restartIntervalInMinutes * 60.0);
-		rebootTimer = new Timer();
-		rebootTimer.schedule(new TimerTask() {
+		this.rebootTimer = new Timer();
+		this.rebootTimer.schedule(new TimerTask() {
 			@Override
 			public void run() {
-				//Transfer the task to the main thread:
-				getServer().getScheduler().runTask(SimpleRestart.this, () -> {
-					shutdownServer();
+				// Transfer the task to the main thread:
+				SimpleRestart.this.getServer().getScheduler().runTask(SimpleRestart.this, () -> {
+					SimpleRestart.this.shutdownServer();
 				});
 			}
 		}, delayInSeconds * 1000L);
-		getLogger().info("Reboot scheduled for " + delayInSeconds + " seconds from now!");
+		this.getLogger().info("Reboot scheduled for " + delayInSeconds + " seconds from now!");
 		
-		isAutomatedRestartEnabled = true;
-		rebootTimerStartTime = System.currentTimeMillis();
+		this.isAutomatedRestartEnabled = true;
+		this.rebootTimerStartTime = System.currentTimeMillis();
 	}
 	
-	//Kick all players from the server with a friendly message!
+	// Kick all players from the server with a friendly message!
 	private void announceRestartAndKickPlayers() {
-		getServer().broadcastMessage(restartMessage);
-		for (Player player : getServer().getOnlinePlayers()) {
-			player.kickPlayer(ChatColor.stripColor(restartMessage));
+		this.getServer().broadcastMessage(this.restartMessage);
+		for(Player player : this.getServer().getOnlinePlayers()) {
+			player.kickPlayer(ChatColor.stripColor(this.restartMessage));
 		}
 	}
 	
-	//Shuts the server down!
+	// Shuts the server down!
 	protected void shutdownServer() {
-		getLogger().info("Restarting...");
-		announceRestartAndKickPlayers();
+		this.getLogger().info("Restarting...");
+		this.announceRestartAndKickPlayers();
 		
-		//Touch the restart.txt file:
+		// Touch the restart.txt file:
 		try {
 			Path dataFolder = getDataFolder().toPath();
 			if(!Files.exists(dataFolder)) {
@@ -176,28 +176,28 @@ public class SimpleRestart extends JavaPlugin {
 			dataFolder = dataFolder.toRealPath(LinkOption.NOFOLLOW_LINKS);
 			
 			Path restartFile = dataFolder.resolve("restart.txt");
-			getLogger().info("Touching restart.txt at: " + restartFile);
+			this.getLogger().info("Touching restart.txt at: " + restartFile);
 			if(Files.exists(restartFile)) {
-				Files.setLastModifiedTime(restartFile, FileTime.from(System.currentTimeMillis(), TimeUnit.MILLISECONDS));
-			}
-			else {
+				Files.setLastModifiedTime(restartFile,
+						FileTime.from(System.currentTimeMillis(), TimeUnit.MILLISECONDS));
+			} else {
 				Files.createFile(restartFile);
 			}
 		} catch (Exception e) {
-			getLogger().info("Something went wrong while touching restart.txt. See stacktrace.");
+			this.getLogger().info("Something went wrong while touching restart.txt. See stacktrace.");
 			e.printStackTrace();
 			return;
 		}
 		
 		//Save the server and shut it down:
 		try {
-			getServer().savePlayers();
-			for(World world : getServer().getWorlds()) {
+			this.getServer().savePlayers();
+			for(World world : this.getServer().getWorlds()) {
 				world.save();
 			}
-			getServer().shutdown();
+			this.getServer().shutdown();
 		} catch (Exception e) {
-			getLogger().info("Something went wrong while saving & stopping!");
+			this.getLogger().info("Something went wrong while saving & stopping!");
 			e.printStackTrace();
 		}
 	}
